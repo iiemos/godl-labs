@@ -2,7 +2,8 @@
 // API Base URL: http://35.78.236.133/mova
 // All amount fields are in Wei format (string), need conversion: 1 ether = 10^18 wei
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://35.78.236.133/mova'
+// const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://35.78.236.133/mova'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://tokyoapi.morganprotocol.io/mova'
 
 async function safeJson(response) {
   if (!response) return null
