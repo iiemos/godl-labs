@@ -3,6 +3,9 @@ import { ethers, JsonRpcProvider } from 'ethers';
 import { parseUnits, formatEther, isAddress } from 'ethers';
 import { MaxUint256 } from 'ethers';
 import i18n from '../i18n/index.js';
+import { MOCK_ADDRESS, USE_STATIC_DATA } from '../config/mock.js';
+import { DAILY_MINT_LIMIT, TICKET_OPTIONS } from '../config/ticketing.js';
+import { staticStakeData } from '../mocks/staticData.js';
 
 // Import ABIs directly
 import StakingABI from '../abis/Staking.json';
@@ -28,10 +31,26 @@ import {
   validateTimeRestrictions
 } from '../web3Contracts';
 
+const emptyTicketHoldings = () => TICKET_OPTIONS.map(() => 0);
+
+const parseThirtyDayTicketCounts = (amount) => {
+  const normalizedAmount = Math.max(0, Math.floor(Number(amount) || 0));
+  for (let believerCount = Math.floor(normalizedAmount / 500); believerCount >= 0; believerCount -= 1) {
+    const remaining = normalizedAmount - believerCount * 500;
+    if (remaining % 300 === 0) {
+      return {
+        creator: remaining / 300,
+        believer: believerCount
+      };
+    }
+  }
+  return { creator: 0, believer: 0 };
+};
+
 const useStakeStore = create((set, get) => ({
   // Basic state
-  isConnected: false,
-  userAddress: '',
+  isConnected: USE_STATIC_DATA,
+  userAddress: USE_STATIC_DATA ? MOCK_ADDRESS : '',
   provider: null,
   signer: null,
   referrer: '',
@@ -89,11 +108,34 @@ const useStakeStore = create((set, get) => ({
   
   // Validation
   stakeAmountError: '',
+
+  // Ticket & minting state
+  ticketHoldings: emptyTicketHoldings(),
+  ticketHoldingsInitialized: false,
+  mintedTotalCount: 0,
+  mintedTodayCount: 0,
+  mintDayKey: new Date().toDateString(),
+  dailyMintLimit: DAILY_MINT_LIMIT,
   
   // Actions
   setConnection: (isConnected, userAddress, provider, signer) => {
-    set({ isConnected, userAddress, provider, signer });
-    if (isConnected) {
+    const connected = USE_STATIC_DATA ? true : isConnected;
+    const effectiveAddress = USE_STATIC_DATA ? (userAddress || MOCK_ADDRESS) : userAddress;
+    const prevAddress = get().userAddress;
+    const normalizedPrevAddress = (prevAddress || '').toLowerCase();
+    const normalizedNextAddress = (effectiveAddress || '').toLowerCase();
+    const addressChanged = connected && normalizedPrevAddress !== normalizedNextAddress;
+    set({ isConnected: connected, userAddress: effectiveAddress, provider, signer });
+    if (!connected || addressChanged) {
+      set({
+        ticketHoldings: emptyTicketHoldings(),
+        ticketHoldingsInitialized: false,
+        mintedTotalCount: 0,
+        mintedTodayCount: 0,
+        mintDayKey: new Date().toDateString()
+      });
+    }
+    if (connected) {
       get().loadStakeData();
     }
   },
@@ -134,6 +176,89 @@ const useStakeStore = create((set, get) => ({
   selectLockDay: (opt) => {
     get().setSelectedStakeIndex(opt.index);
   },
+
+  initializeTicketHoldingsFromStakeList: (sourceStakeList = null, force = false) => {
+    const { ticketHoldingsInitialized, stakeList } = get();
+    if (ticketHoldingsInitialized && !force) return;
+
+    const records = Array.isArray(sourceStakeList) ? sourceStakeList : stakeList;
+    const nextHoldings = emptyTicketHoldings();
+
+    records.forEach((record) => {
+      const amount = Math.max(0, Math.floor(Number(record.amount) || 0));
+      if (record.stakeIndex === 0) {
+        nextHoldings[0] += Math.floor(amount / 100);
+      } else if (record.stakeIndex === 1) {
+        const matchedCreator = amount / 300;
+        const matchedBeliever = amount / 500;
+        if (Number.isInteger(matchedCreator)) {
+          nextHoldings[1] += matchedCreator;
+        } else if (Number.isInteger(matchedBeliever)) {
+          nextHoldings[2] += matchedBeliever;
+        } else {
+          const parsed = parseThirtyDayTicketCounts(amount);
+          nextHoldings[1] += parsed.creator;
+          nextHoldings[2] += parsed.believer;
+        }
+      }
+    });
+
+    set({
+      ticketHoldings: nextHoldings,
+      ticketHoldingsInitialized: true
+    });
+  },
+
+  addTicketHoldings: (ticketIndex, quantity = 1) => {
+    const index = Number(ticketIndex);
+    const normalizedQuantity = Math.max(1, Math.floor(Number(quantity) || 0));
+    if (!Number.isInteger(index) || index < 0) return false;
+
+    set((state) => {
+      if (index >= state.ticketHoldings.length) return state;
+      const nextHoldings = [...state.ticketHoldings];
+      nextHoldings[index] += normalizedQuantity;
+      return {
+        ticketHoldings: nextHoldings,
+        ticketHoldingsInitialized: true
+      };
+    });
+    return true;
+  },
+
+  consumeTicketHoldings: (ticketIndex, quantity = 1) => {
+    const index = Number(ticketIndex);
+    const normalizedQuantity = Math.max(1, Math.floor(Number(quantity) || 0));
+    const { ticketHoldings } = get();
+    if (!Number.isInteger(index) || index < 0 || index >= ticketHoldings.length) return false;
+    if (ticketHoldings[index] < normalizedQuantity) return false;
+
+    set((state) => {
+      const nextHoldings = [...state.ticketHoldings];
+      nextHoldings[index] -= normalizedQuantity;
+      return { ticketHoldings: nextHoldings };
+    });
+    return true;
+  },
+
+  refreshMintCounterDay: () => {
+    const todayKey = new Date().toDateString();
+    if (todayKey !== get().mintDayKey) {
+      set({
+        mintDayKey: todayKey,
+        mintedTodayCount: 0
+      });
+    }
+  },
+
+  increaseMintCount: (count = 1) => {
+    const normalizedCount = Math.max(1, Math.floor(Number(count) || 0));
+    get().refreshMintCounterDay();
+    set((state) => ({
+      mintedTotalCount: state.mintedTotalCount + normalizedCount,
+      mintedTodayCount: state.mintedTodayCount + normalizedCount
+    }));
+  },
   
   // Load staking data from real contracts
   loadStakeData: async () => {
@@ -142,6 +267,23 @@ const useStakeStore = create((set, get) => ({
       if (!userAddress) return;
       
       set({ loadingRecords: true });
+
+      if (USE_STATIC_DATA) {
+        const mock = JSON.parse(JSON.stringify(staticStakeData));
+        set({
+          stakeList: mock.stakeList,
+          usdtBalance: mock.usdtBalance,
+          aigBalance: mock.aigBalance,
+          hourlyLimitByType: mock.hourlyLimitByType,
+          remainingHourlyLimitByType: mock.remainingHourlyLimitByType,
+          userTotalStaked: mock.userTotalStaked,
+          userReinvestTaxObj: mock.userReinvestTaxObj,
+          isStakingStarted: mock.isStakingStarted,
+          loadingRecords: false
+        });
+        get().initializeTicketHoldingsFromStakeList(mock.stakeList);
+        return;
+      }
       
       // Initialize contracts with provider (for read operations)
       // Disable batch requests as some RPC nodes don't support it
@@ -278,6 +420,7 @@ const useStakeStore = create((set, get) => ({
         isStakingStarted: stakingStarted,
         loadingRecords: false
       });
+      get().initializeTicketHoldingsFromStakeList(stakeList);
       
     } catch (error) {
       console.error('loadStakeData failed:', error);
@@ -306,13 +449,45 @@ const useStakeStore = create((set, get) => ({
       }
       
       set({ isStakingBusy: true, isProcessing: true });
+
+      if (USE_STATIC_DATA) {
+        const nowSec = Math.floor(Date.now() / 1000);
+        const lockDays = selectedStakeIndex === 0 ? 1 : 30;
+        const newRecord = {
+          oriStakeTime: nowSec,
+          amount: String(stakeAmount),
+          amountWei: Number(stakeAmount),
+          status: false,
+          stakeIndex: selectedStakeIndex,
+          reward: selectedStakeIndex === 0 ? (stakeAmount * 0.003).toFixed(2) : (stakeAmount * 0.013 * lockDays).toFixed(2),
+          canEndData: nowSec + lockDays * 24 * 3600,
+          bEndData: false
+        };
+
+        const currentStakeList = Array.isArray(get().stakeList) ? get().stakeList : [];
+        const nextUsdt = Math.max(0, (parseFloat(get().usdtBalance || '0') - Number(stakeAmount))).toFixed(2);
+        const nextTotal = (parseFloat(get().userTotalStaked || '0') + Number(stakeAmount)).toFixed(2);
+
+        set({
+          stakeList: [newRecord, ...currentStakeList],
+          usdtBalance: nextUsdt,
+          userTotalStaked: nextTotal,
+          lastStakeTime: Date.now(),
+          isStakingBusy: false,
+          isProcessing: false,
+          stakeAmount: 100
+        });
+
+        get().startCountdown();
+        return;
+      }
       
       // Validate time restrictions (Beijing time)
       if (!validateTimeRestrictions()) {
         throw new Error(i18n.t('error.highTraffic'));
       }
       
-      // Check maximum stake limit (10,000 USD1 per user)
+      // Check maximum stake limit (10,000 USDT per user)
       const totalStaked = parseFloat(userTotalStaked) || 0;
       const currentStakeAmount = parseFloat(stakeAmount) || 0;
       const totalAfterStake = totalStaked + currentStakeAmount;
@@ -355,7 +530,7 @@ const useStakeStore = create((set, get) => ({
       //   throw new Error(i18n.t('error.aigBalance'));
       // }
       
-      // Check and approve USD1
+      // Check and approve USDT
       const usdtAllowance = await usdtContract.allowance(await signer.getAddress(), import.meta.env.VITE_STAKING_ADDRESS || '0xD82B1B0D51CB0D220eFbbbf2BBf3E2cCf173E722');
       if (usdtAllowance < amountWei) {
         const usdtTx = await usdtContract.approve(import.meta.env.VITE_STAKING_ADDRESS || '0xD82B1B0D51CB0D220eFbbbf2BBf3E2cCf173E722', MaxUint256);
@@ -443,6 +618,15 @@ const useStakeStore = create((set, get) => ({
       
       set({ UnstakeLoading: true });
       console.log('UnstakeLoading set to true');
+
+      if (USE_STATIC_DATA) {
+        const nextList = stakeList.map((item, i) => {
+          if (i !== index) return item;
+          return { ...item, status: true, canEndData: Math.floor(Date.now() / 1000) };
+        });
+        set({ stakeList: nextList });
+        return;
+      }
       
       // Initialize contract for write operation
       console.log('Initializing contract...');

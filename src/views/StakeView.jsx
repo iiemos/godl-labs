@@ -9,14 +9,19 @@ import { createPublicClient, http } from 'viem';
 import TEAMLEVEL_ABI from '../abis/TeamLevel.json';
 import { useAccount } from 'wagmi';
 import { useNotification, useWalletVerification } from '../App.jsx';
+import { MOCK_ADDRESS, USE_STATIC_DATA } from '../config/mock.js';
+import { TICKET_OPTIONS } from '../config/ticketing.js';
 
 function StakeView() {
   // Initialize wallet integration
   useWalletIntegration();
   
   const { t } = useTranslation();
-  const { address, isConnected } = useAccount();
-  const { isVerified } = useWalletVerification();
+  const { address: walletAddress, isConnected: walletConnected } = useAccount();
+  const address = USE_STATIC_DATA ? MOCK_ADDRESS : walletAddress;
+  const isConnected = USE_STATIC_DATA ? true : walletConnected;
+  const { isVerified: walletVerified } = useWalletVerification();
+  const isVerified = USE_STATIC_DATA ? true : walletVerified;
   
     // const {  isConnected } = useAccount();
   // const address = '0x62da8a37619ef2b2aa42fb14b343bab6a759d9b1'
@@ -43,8 +48,6 @@ function StakeView() {
     lockOptions,
     stakeList,
     loadingRecords,
-    sliderMin,
-    sliderMax,
     countdown,
     isInCooldown,
     isStakingBusy,
@@ -58,7 +61,7 @@ function StakeView() {
     // Actions
     setStakeAmount,
     setSelectedStakeIndex,
-    selectLockDay,
+    addTicketHoldings,
     onStake,
     onUnstake,
     canUnstake,
@@ -68,6 +71,59 @@ function StakeView() {
     transformDay,
     validateStakeAmount
   } = useStakeStore();
+  const ticketOptions = TICKET_OPTIONS;
+  const getDefaultTicketIndex = () => {
+    const matchedIndex = ticketOptions.findIndex(
+      (ticket) => ticket.price === Number(stakeAmount) && ticket.stakeIndex === selectedStakeIndex
+    );
+    if (matchedIndex >= 0) return matchedIndex;
+    return 0;
+  };
+  const [selectedTicketIndex, setSelectedTicketIndex] = useState(getDefaultTicketIndex);
+  const getDefaultTicketQuantity = () => {
+    const matchedTicket = ticketOptions[getDefaultTicketIndex()] || ticketOptions[0];
+    const parsedAmount = Number(stakeAmount) || 0;
+    const matchedPrice = matchedTicket?.price || 100;
+    const quantity = Math.floor(parsedAmount / matchedPrice);
+    return quantity > 0 ? quantity : 1;
+  };
+  const [ticketQuantity, setTicketQuantity] = useState(getDefaultTicketQuantity);
+
+  const numericStakeAmount = Number(stakeAmount) || 0;
+  const insuranceAmount = numericStakeAmount * 0.1;
+  const totalPaymentAmount = numericStakeAmount + insuranceAmount;
+
+  const formatAmount = (value) => {
+    if (!Number.isFinite(value)) return '0';
+    return Number.isInteger(value) ? String(value) : value.toFixed(2);
+  };
+  const selectedTicket = ticketOptions[selectedTicketIndex] || ticketOptions[0];
+
+  const handleTicketSelect = (index) => {
+    const ticket = ticketOptions[index];
+    if (!ticket) return;
+    setSelectedTicketIndex(index);
+    setSelectedStakeIndex(ticket.stakeIndex);
+  };
+
+  const updateTicketQuantity = (value) => {
+    const nextQuantity = Number(value);
+    if (!Number.isFinite(nextQuantity)) return;
+    const normalizedQuantity = Math.max(1, Math.floor(nextQuantity));
+    setTicketQuantity(normalizedQuantity);
+  };
+
+  useEffect(() => {
+    const ticket = ticketOptions[selectedTicketIndex];
+    if (!ticket) return;
+    const expectedAmount = ticket.price * ticketQuantity;
+    if (Number(stakeAmount) !== expectedAmount) {
+      setStakeAmount(expectedAmount);
+    }
+    if (selectedStakeIndex !== ticket.stakeIndex) {
+      setSelectedStakeIndex(ticket.stakeIndex);
+    }
+  }, [selectedTicketIndex, ticketQuantity, selectedStakeIndex, setSelectedStakeIndex, setStakeAmount, stakeAmount]);
 
   // Load global stake stats
   useEffect(() => {
@@ -152,6 +208,7 @@ function StakeView() {
         
         // 执行质押操作
         await onStake();
+        addTicketHoldings(selectedTicketIndex, ticketQuantity);
         addNotification('success', t('success.stakeSuccessful'));
       }
     } catch (err) {
@@ -175,6 +232,7 @@ function StakeView() {
   
   // Check if user has bound a referrer
   const checkReferralBinding = async (address) => {
+    if (USE_STATIC_DATA) return true;
     try {
       setCheckingReferral(true);
       
@@ -228,7 +286,7 @@ function StakeView() {
               
               <div className="lg:flex lg:flex-wrap grid grid-cols-2 gap-6 gap-3 lg:gap-4 -mx-6 px-6 lg:mx-0 lg:px-0">
                 <div className="flex flex-col items-center shrink-0 bg-[#1c152a] px-5 py-3 rounded-xl border border-[#312447] min-w-[140px]">
-                  <p className="text-[#a692c8] text-[10px] font-bold">USD1 BALANCE</p>
+                  <p className="text-[#a692c8] text-[10px] font-bold">USDT BALANCE</p>
                   <p className="text-white font-black text-3xl">${parseFloat(usdtBalance).toLocaleString()}</p>
                 </div>
                 
@@ -249,44 +307,45 @@ function StakeView() {
             </div>
           </div>
           
-          {/* Staking Duration Selection */}
+          {/* Ticket Selection */}
           <div className="glass-card rounded-2xl p-6 border-[#312447] mb-8">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <Icon icon="mdi:clock-outline" className="text-primary" />
-                {t('stake.selectStakeDuration')}
+                门票选择
               </h3>
               <button className="text-primary hover:text-primary/80 transition-colors">
                 <Icon icon="mdi:information-outline" className="text-2xl" />
               </button>
             </div>
             
-            <div className="grid grid-cols-2 gap-6">
-              {lockOptions.map((opt, i) => (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {ticketOptions.map((ticket, i) => (
                 <div
                   key={i}
                   className={`bg-primary/10 border-primary/50 rounded-2xl p-6 cursor-pointer border transition-all ${
-                    selectedStakeIndex === i
+                    selectedTicketIndex === i
                       ? 'border-primary/200 bg-primary/100 neon-border-purple'
                       : 'border-[#312447] hover:border-primary/50'
                   }`}
-                  onClick={() => setSelectedStakeIndex(i)}
+                  onClick={() => handleTicketSelect(i)}
                 >
-                  <div className="flex justify-between md:items-start flex-col md:flex-row items-center mb-4">
-                    <div>
-                      <h4 className="text-2xl font-black mb-2">{opt.days}-{t('stake.dayTerm')}</h4>
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <div className="min-w-0">
+                      <h4 className="text-2xl font-black mb-2">{ticket.name}</h4>
+                      <p className="text-[#a692c8] text-sm">{ticket.desc}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-[#a692c8] text-lg font-bold hidden md:block">{t('stake.estApy')}</p>
-                      <p className="text-3xl font-black text-[#0bda6f] tabular-nums">{opt.rate.toFixed(2)}%</p>
+                    <div className="text-right shrink-0">
+                      <p className="text-[#a692c8] text-lg font-bold hidden md:block">售价</p>
+                      <p className="text-3xl font-black text-[#0bda6f] tabular-nums">{ticket.price} USDT</p>
                     </div>
                   </div>
                   
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
-                      <span className="text-[#a692c8]">{t('stake.dailyRate')}</span>
+                      <span className="text-[#a692c8]">对应活动周期</span>
                       <span className="text-white font-bold">
-                        {i== 0 ? '0.3000' : '1.3000'}%
+                        {ticket.stakeIndex === 0 ? '1天' : '30天'}
                       </span>
                     </div>
                   </div>
@@ -294,7 +353,7 @@ function StakeView() {
               ))}
             </div>
           </div>
-          
+
           <div className="flex flex-col lg:grid lg:grid-cols-3 gap-8 mt-8">
             {/* Stake Form */}
             <div className="lg:col-span-1 glass-card rounded-2xl p-6 border-[#312447]">
@@ -306,22 +365,45 @@ function StakeView() {
               <div className="space-y-6">
                 <div>
                   <label className="text-[#a692c8] text-[10px] lg:text-lg font-bold uppercase mb-2 block">
-                    {t('stake.amountToStake')} - {sliderMin}-{sliderMax}
+                    门票售价
                   </label>
-                  <div className="relative">
-                    <div
-                      className={`w-full bg-[#110d1a] border rounded-xl py-4 lg:py-5 px-4 text-white font-bold text-lg ${
-                        stakeAmountError ? 'border-red-500' : 'border-[#312447]'
-                      }`}
-                    >
-                      {stakeAmount}
+                  <div className={`w-full bg-[#110d1a] border rounded-xl py-4 lg:py-5 px-4 ${stakeAmountError ? 'border-red-500' : 'border-[#312447]'}`}>
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-[#a692c8] text-xs">已选门票</p>
+                        <p className="text-white font-bold text-lg">{selectedTicket.name}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[#a692c8] text-xs">售价</p>
+                        <p className="text-primary font-black text-2xl">{selectedTicket.price} USDT</p>
+                      </div>
                     </div>
-                    <button 
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-primary font-bold text-lg bg-primary/10 px-3 py-2 rounded-lg hover:bg-primary/20 transition-colors"
-                      onClick={() => setStakeAmount(sliderMax)}
-                    >
-                      MAX
-                    </button>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <p className="text-[#a692c8] text-sm">门票数量</p>
+                    <div className="flex items-center bg-[#110d1a] border border-[#312447] rounded-lg overflow-hidden">
+                      <button
+                        type="button"
+                        className="px-3 py-2 text-white hover:bg-white/10 transition-colors"
+                        onClick={() => updateTicketQuantity(ticketQuantity - 1)}
+                      >
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        min="1"
+                        className="w-16 bg-transparent text-center text-white font-bold outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        value={ticketQuantity}
+                        onChange={(e) => updateTicketQuantity(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        className="px-3 py-2 text-white hover:bg-white/10 transition-colors"
+                        onClick={() => updateTicketQuantity(ticketQuantity + 1)}
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                   {stakeAmountError && (
                     <p className="text-red-500 text-lg mt-2">{stakeAmountError}</p>
@@ -333,26 +415,22 @@ function StakeView() {
                     <span className="text-[#a692c8] uppercase">{t('stake.stakeAmount')}</span>
                     <span className="text-primary">{stakeAmount}</span>
                   </div>
-                  <input 
-                    className="w-full h-3 bg-[#312447] rounded-lg appearance-none cursor-pointer accent-primary"
-                    type="range"
-                    min={sliderMin}
-                    max={sliderMax}
-                    step={10}
-                    value={stakeAmount}
-                    onChange={(e) => setStakeAmount(parseInt(e.target.value))}
-                  />
-                  <div className="flex justify-between text-lg text-[#a692c8] mt-1">
-                    <span>{sliderMin}</span>
-                    <span>{sliderMax}</span>
-                  </div>
+                  <p className="text-[#a692c8] text-sm">门票总额会按所选门票与数量自动计算。</p>
                 </div>
                 
                 <div className="p-4 bg-background-dark/50 rounded-xl border border-[#312447] text-md">
+                  {selectedStakeIndex === 1 && (
+                    <div className="flex justify-between mb-2">
+                      <span className="text-[#a692c8]">{t('stake.paymentAmount')}</span>
+                      <span className="text-white font-bold">
+                        {formatAmount(numericStakeAmount)} + {formatAmount(insuranceAmount)} = {formatAmount(totalPaymentAmount)} USDT
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between mb-2">
                     <span className="text-[#a692c8]">{t('stake.dailyRewards')}</span>
                     <span className="text-white font-bold">
-                      + {(stakeAmount * (lockOptions[selectedStakeIndex].rate / 100) / lockOptions[selectedStakeIndex].days).toFixed(2)} USD1
+                      + {(stakeAmount * (lockOptions[selectedStakeIndex].rate / 100) / lockOptions[selectedStakeIndex].days).toFixed(2)} USDT
                     </span>
                   </div>
                   <div className="flex justify-between">

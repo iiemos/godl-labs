@@ -1,214 +1,225 @@
-// Lightweight API adapter for Morgan New UI data integration
-// API Base URL: http://35.78.236.133/mova
-// All amount fields are in Wei format (string), need conversion: 1 ether = 10^18 wei
+import { USE_STATIC_DATA, MOCK_ADDRESS } from '../config/mock.js';
+import { staticApiData } from '../mocks/staticData.js';
 
-// const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://35.78.236.133/mova'
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://tokyoapi.morganprotocol.io/mova'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://tokyoapi.morganprotocol.io/mova';
+
+function clone(data) {
+  if (data == null) return data;
+  return JSON.parse(JSON.stringify(data));
+}
 
 async function safeJson(response) {
-  if (!response) return null
+  if (!response) return null;
   try {
-    return await response.json()
+    return await response.json();
   } catch {
-    return null
+    return null;
   }
 }
 
 async function get(path) {
-  const url = `${API_BASE}${path}`
+  const url = `${API_BASE}${path}`;
   try {
-    const res = await fetch(url, { credentials: 'omit' })
-    if (!res.ok) return null
-    return await safeJson(res)
+    const res = await fetch(url, { credentials: 'omit' });
+    if (!res.ok) return null;
+    return await safeJson(res);
   } catch {
-    return null
+    return null;
   }
 }
 
 async function post(path, body) {
-  const url = `${API_BASE}${path}`
+  const url = `${API_BASE}${path}`;
   try {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'omit',
-      body: JSON.stringify(body ?? {})
-    })
-    if (!res.ok) return null
-    return await safeJson(res)
+      body: JSON.stringify(body ?? {}),
+    });
+    if (!res.ok) return null;
+    return await safeJson(res);
   } catch {
-    return null
+    return null;
   }
 }
 
-// ==================== Utility Functions ====================
+function getStaticUserInfo(address) {
+  const data = clone(staticApiData.userInfo);
+  data.address = address || MOCK_ADDRESS;
+  return data;
+}
 
-// Wei -> Ether conversion (string to number)
 export function formatWei(weiString, decimals = 4) {
-  if (!weiString || weiString === '0') return '0'
+  if (!weiString || weiString === '0') return '0';
   try {
-    const wei = BigInt(weiString)
-    const ether = Number(wei) / 1e18
+    const wei = BigInt(weiString);
+    const ether = Number(wei) / 1e18;
     return ether.toLocaleString('en-US', {
       minimumFractionDigits: 0,
-      maximumFractionDigits: decimals
-    })
+      maximumFractionDigits: decimals,
+    });
   } catch {
-    return '0'
+    return '0';
   }
 }
 
-// Format address to short form
 export function formatAddress(address) {
-  if (!address) return ''
-  return `${address.slice(0, 6)}...${address.slice(-4)}`
+  if (!address) return '';
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-// Format timestamp to date string
 export function formatTimestamp(timestamp) {
-  if (!timestamp) return ''
-  return new Date(parseInt(timestamp) * 1000).toLocaleString()
+  if (!timestamp) return '';
+  return new Date(parseInt(timestamp, 10) * 1000).toLocaleString();
 }
 
-// 处理质押列表的时间
 export function transformDay(index) {
-  if (index == '0') return '1D'
-  if (index == '1') return '15D'
-  if (index == '2') return '30D'
+  if (index == '0') return '1D';
+  if (index == '1') return '15D';
+  if (index == '2') return '30D';
+  return '';
 }
-// ==================== Home Page APIs ====================
 
-// Get global staking statistics
 export async function fetchGlobalStakeStats() {
-  return await get('/api/stats/stake')
+  if (USE_STATIC_DATA) return clone(staticApiData.globalStakeStats);
+  return await get('/api/stats/stake');
 }
 
-// Get stake statistics for specific date
 export async function fetchDateStakeStats(date) {
-  if (!date) return null
-  return await get(`/api/stats/stake/date/${date}`)
+  if (!date) return null;
+  if (USE_STATIC_DATA) return clone(staticApiData.dateStakeStats);
+  return await get(`/api/stats/stake/date/${date}`);
 }
 
-// Get user complete info
 export async function fetchUserInfo(address) {
-  if (!address) return null
-  return await get(`/api/user/${address}`)
+  if (USE_STATIC_DATA) return getStaticUserInfo(address);
+  if (!address) return null;
+  return await get(`/api/user/${address}`);
 }
 
-// ==================== Team Page APIs ====================
-
-// Get user team/network info
 export async function fetchTeamInfo(address) {
-  if (!address) return null
-  return await get(`/api/team/${address}`)
+  if (USE_STATIC_DATA) return clone(staticApiData.teamInfo);
+  if (!address) return null;
+  return await get(`/api/team/${address}`);
 }
 
-// Get team hierarchy (including direct referrals)
 export async function fetchTeamHierarchy(address) {
-  if (!address) return null
-  return await get(`/api/team/${address}/hierarchy`)
+  if (USE_STATIC_DATA) return clone(staticApiData.teamHierarchy);
+  if (!address) return null;
+  return await get(`/api/team/${address}/hierarchy`);
 }
 
-// Get user's ancestor chain
 export async function fetchAncestors(address) {
-  if (!address) return null
-  return await get(`/api/team/${address}/ancestors`)
+  if (USE_STATIC_DATA) return clone(staticApiData.ancestors);
+  if (!address) return null;
+  return await get(`/api/team/${address}/ancestors`);
 }
 
-// Get all members list (paginated)
 export async function fetchAllUsers(page = 1, pageSize = 10) {
-  return await get(`/api/users?page=${page}&page_size=${pageSize}`)
+  if (USE_STATIC_DATA) {
+    const data = clone(staticApiData.allUsers);
+    data.page = page;
+    data.page_size = pageSize;
+    return data;
+  }
+  return await get(`/api/users?page=${page}&page_size=${pageSize}`);
 }
 
-// ==================== Mine Page APIs ====================
-
-// Get user stake records
 export async function fetchStakeRecords(address) {
-  if (!address) return null
-  return await get(`/api/stakes/${address}`)
+  if (USE_STATIC_DATA) return clone(staticApiData.stakeRecords);
+  if (!address) return null;
+  return await get(`/api/stakes/${address}`);
 }
 
-// Get user unstake records
 export async function fetchUnstakeRecords(address) {
-  if (!address) return null
-  return await get(`/api/unstakes/${address}`)
+  if (USE_STATIC_DATA) return clone(staticApiData.unstakeRecords);
+  if (!address) return null;
+  return await get(`/api/unstakes/${address}`);
 }
 
-// Get user today's stake
 export async function fetchTodayStake(address) {
-  if (!address) return null
-  return await get(`/api/user/${address}/today`)
+  if (USE_STATIC_DATA) return clone(staticApiData.todayStake);
+  if (!address) return null;
+  return await get(`/api/user/${address}/today`);
 }
 
-// Get user performance details
 export async function fetchPerformance(address) {
-  if (!address) return null
-  return await get(`/api/performance/${address}`)
+  if (USE_STATIC_DATA) return clone(staticApiData.performance);
+  if (!address) return null;
+  return await get(`/api/performance/${address}`);
 }
 
-// 查询用户社区奖励信息
 export async function fetchCommunityReward(address) {
-  if (!address) return null
-  return await get(`/api/reward/community/${address}/snapshot`)
+  if (USE_STATIC_DATA) return clone(staticApiData.communityReward);
+  if (!address) return null;
+  return await get(`/api/reward/community/${address}/snapshot`);
 }
 
-// 请求社区奖励签名
 export async function requestCommunityRewardSignature({ user, amount, user_signature, message, contract } = {}) {
-  if (!user || !user_signature || !message) return null
+  if (USE_STATIC_DATA) {
+    const data = clone(staticApiData.communityRewardSign);
+    if (amount != null) data.amount = amount;
+    if (contract) data.contract = contract;
+    if (user) data.user = user;
+    if (user_signature) data.user_signature = user_signature;
+    if (message) data.message = message;
+    return data;
+  }
+
+  if (!user || !user_signature || !message) return null;
   const payload = {
     user,
     amount: amount ?? null,
     user_signature,
-    message
-  }
-  if (contract) payload.contract = contract
-  return await post('/api/reward/community/sign', payload)
+    message,
+  };
+  if (contract) payload.contract = contract;
+  return await post('/api/reward/community/sign', payload);
 }
 
-// 获取用户奖励汇总
 export async function fetchRewardSummary(address) {
-  if (!address) return null
-  return await get(`/api/rewards/${address}/summary`)
+  if (USE_STATIC_DATA) return clone(staticApiData.rewardSummary);
+  if (!address) return null;
+  return await get(`/api/rewards/${address}/summary`);
 }
-
-// ==================== Legacy APIs (for compatibility) ====================
 
 export async function fetchApiRates({ fromToken, toToken, amountIn } = {}) {
-  const path = `/rates?from=${fromToken}&to=${toToken}&amount=${amountIn ?? ''}`
-  return await get(path)
+  if (USE_STATIC_DATA) return clone(staticApiData.legacy.rates);
+  const path = `/rates?from=${fromToken}&to=${toToken}&amount=${amountIn ?? ''}`;
+  return await get(path);
 }
 
 export async function fetchApiBalance({ address, token } = {}) {
-  const path = `/balances?address=${address ?? ''}&token=${token ?? ''}`
-  return await get(path)
+  if (USE_STATIC_DATA) return clone(staticApiData.legacy.balance);
+  const path = `/balances?address=${address ?? ''}&token=${token ?? ''}`;
+  return await get(path);
 }
 
 export async function fetchApiAllowance({ owner, token, spender } = {}) {
-  const path = `/allowance?owner=${owner ?? ''}&token=${token ?? ''}&spender=${spender ?? ''}`
-  return await get(path)
+  if (USE_STATIC_DATA) return clone(staticApiData.legacy.allowance);
+  const path = `/allowance?owner=${owner ?? ''}&token=${token ?? ''}&spender=${spender ?? ''}`;
+  return await get(path);
 }
 
 export async function fetchApiUserInfo({ address } = {}) {
-  const path = `/userInfo?address=${address ?? ''}`
-  return await get(path)
+  if (USE_STATIC_DATA) return clone(staticApiData.legacy.userInfo);
+  const path = `/userInfo?address=${address ?? ''}`;
+  return await get(path);
 }
 
 export default {
-  // Utility
   formatWei,
   formatAddress,
   transformDay,
   formatTimestamp,
-  // Home APIs
   fetchGlobalStakeStats,
   fetchDateStakeStats,
   fetchUserInfo,
-  // Team APIs
   fetchTeamInfo,
   fetchTeamHierarchy,
   fetchAncestors,
   fetchAllUsers,
-  // Mine APIs
   fetchStakeRecords,
   fetchUnstakeRecords,
   fetchTodayStake,
@@ -216,9 +227,8 @@ export default {
   fetchCommunityReward,
   requestCommunityRewardSignature,
   fetchRewardSummary,
-  // Legacy APIs
   fetchApiRates,
   fetchApiBalance,
   fetchApiAllowance,
-  fetchApiUserInfo
-}
+  fetchApiUserInfo,
+};

@@ -9,6 +9,8 @@ import USD1SWAP_ROUTER_ABI from '../abis/IUsd1swapRouter02ABI.json'
 import TRADING_ABI from '../abis/TradingABI.json'
 import { useTranslation } from 'react-i18next'
 import { useWalletVerification } from '../App.jsx'
+import { MOCK_ADDRESS, USE_STATIC_DATA } from '../config/mock.js'
+import { staticSwapData } from '../mocks/staticData.js'
 
 // Addresses
 const USD1SWAP_ROUTER_ADDRESS = '0xfdc450300611776F640Cd5e879D678Acd455087c'
@@ -21,16 +23,19 @@ const TRADING_ADDRESS = '0x2746B0eA4C4F8da24B1d9F174de935b5C4F4449D'
 const MaxUint256 = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')
 
 function SwapView() {
-  const { address, isConnected } = useAccount()
+  const { address: walletAddress, isConnected: walletConnected } = useAccount()
+  const address = USE_STATIC_DATA ? MOCK_ADDRESS : walletAddress
+  const isConnected = USE_STATIC_DATA ? true : walletConnected
   const { connect, connectors } = useConnect()
   // const {  isConnected } = useAccount();
   // const address = '0xc4bbfad25740517144361a4215054ecd8b70c148'
   const { t } = useTranslation()
-  const { isVerified } = useWalletVerification()
+  const { isVerified: walletVerified } = useWalletVerification()
+  const isVerified = USE_STATIC_DATA ? true : walletVerified
 
   // UI state
-  const [fromToken, setFromToken] = useState('USD1')
-  const [toToken, setToToken] = useState('MGN')
+  const [fromToken, setFromToken] = useState('USDT')
+  const [toToken, setToToken] = useState('MOON')
   const [fromAmount, setFromAmount] = useState('')
   const [slippage, setSlippage] = useState(20)
   const [customSlippage, setCustomSlippage] = useState('')
@@ -41,6 +46,8 @@ function SwapView() {
   const [pendingHash, setPendingHash] = useState('')
   const [usd1ToMgnRate, setUsd1ToMgnRate] = useState('0.0000')
   const [mgnToUsd1Rate, setMgnToUsd1Rate] = useState('0.0000')
+  const [localUsdtBalance, setLocalUsdtBalance] = useState(staticSwapData.usdtBalance)
+  const [localMgnBalance, setLocalMgnBalance] = useState(staticSwapData.mgnBalance)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   
   // User info for purchase limits
@@ -81,14 +88,14 @@ function SwapView() {
   const settingsPopupRef = useRef(null)
   const settingsButtonRef = useRef(null)
 
-  // Token allowances (for USD1/USDT and MGN)
+  // Token allowances (for USDT and MOON)
   // USDT授权到TRADING_ADDRESS (用于buy)
   const { data: usdtAllowanceForTrading, refetch: refetchUsdtAllowanceForTrading } = useReadContract({
     address: USDT_ADDRESS,
     abi: ERC20_ABI,
     functionName: 'allowance',
     args: [address ?? '0x0', TRADING_ADDRESS],
-    enabled: !!address && isVerified
+    enabled: !!address && isVerified && !USE_STATIC_DATA
   })
   // USDT授权到Router (保留用于其他场景)
   const { data: usdtAllowance, refetch: refetchUsdtAllowance } = useReadContract({
@@ -96,15 +103,15 @@ function SwapView() {
     abi: ERC20_ABI,
     functionName: 'allowance',
     args: [address ?? '0x0', USD1SWAP_ROUTER_ADDRESS],
-    enabled: !!address && isVerified
+    enabled: !!address && isVerified && !USE_STATIC_DATA
   })
-  // MGN授权到Router (用于sell/swap)
+  // MOON授权到Router (用于sell/swap)
   const { data: mgnAllowance, refetch: refetchMgnAllowance } = useReadContract({
     address: MGN_ADDRESS,
     abi: ERC20_ABI,
     functionName: 'allowance',
     args: [address ?? '0x0', USD1SWAP_ROUTER_ADDRESS],
-    enabled: !!address && isVerified
+    enabled: !!address && isVerified && !USE_STATIC_DATA
   })
   
   // Token balances (from chain)
@@ -113,14 +120,14 @@ function SwapView() {
     abi: ERC20_ABI,
     functionName: 'balanceOf',
     args: [address ?? '0x0'],
-    enabled: !!address && isVerified
+    enabled: !!address && isVerified && !USE_STATIC_DATA
   })
   const { data: mgnBalance, refetch: refetchMgnBalance } = useReadContract({
     address: MGN_ADDRESS,
     abi: ERC20_ABI,
     functionName: 'balanceOf',
     args: [address ?? '0x0'],
-    enabled: !!address && isVerified
+    enabled: !!address && isVerified && !USE_STATIC_DATA
   })
   
   // User info for purchase limits
@@ -129,7 +136,7 @@ function SwapView() {
     abi: TRADING_ABI,
     functionName: 'getUserInfo',
     args: [address ?? '0x0'],
-    enabled: !!address && isVerified
+    enabled: !!address && isVerified && !USE_STATIC_DATA
   })
   
   // Check if contract is paused
@@ -137,7 +144,7 @@ function SwapView() {
     address: TRADING_ADDRESS,
     abi: TRADING_ABI,
     functionName: 'paused',
-    enabled: isVerified
+    enabled: isVerified && !USE_STATIC_DATA
   })
 
   // Approve txs
@@ -146,7 +153,7 @@ function SwapView() {
     abi: ERC20_ABI,
     functionName: 'approve',
     args: [USD1SWAP_ROUTER_ADDRESS, MaxUint256],
-    query: { enabled: isVerified }
+    query: { enabled: isVerified && !USE_STATIC_DATA }
   })
 
   const { data: approveMgnData, error: approveMgnError } = useSimulateContract({
@@ -154,7 +161,7 @@ function SwapView() {
     abi: ERC20_ABI,
     functionName: 'approve',
     args: [USD1SWAP_ROUTER_ADDRESS, MaxUint256],
-    query: { enabled: isVerified }
+    query: { enabled: isVerified && !USE_STATIC_DATA }
   })
 
   // Router getAmountsOut
@@ -163,24 +170,35 @@ function SwapView() {
     abi: USD1SWAP_ROUTER_ABI,
     functionName: 'getAmountsOut',
     args: [parseUnits('1', 18), [USDT_ADDRESS, MGN_ADDRESS]],
-    enabled: !!address && isVerified
+    enabled: !!address && isVerified && !USE_STATIC_DATA
   })
   const { data: mgnOutData, refetch: refetchMgnOut } = useReadContract({
     address: USD1SWAP_ROUTER_ADDRESS,
     abi: USD1SWAP_ROUTER_ABI,
     functionName: 'getAmountsOut',
     args: [parseUnits('1', 18), [MGN_ADDRESS, USDT_ADDRESS]],
-    enabled: !!address && isVerified
+    enabled: !!address && isVerified && !USE_STATIC_DATA
   })
 
   // Track rates from router
   useEffect(() => {
+    if (USE_STATIC_DATA) {
+      setUsd1ToMgnRate(staticSwapData.usd1ToMgnRate)
+      setMgnToUsd1Rate(staticSwapData.mgnToUsd1Rate)
+      setUserInfo(staticSwapData.userInfo)
+      setIsContractPaused(false)
+      return
+    }
+
     if (usd1OutData && Array.isArray(usd1OutData) && usd1OutData.length >= 2) {
       const rateVal = parseFloat(formatUnits(usd1OutData[1], 18))
       setUsd1ToMgnRate(rateVal.toFixed(6))
     }
   }, [usd1OutData])
   useEffect(() => {
+    if (USE_STATIC_DATA) {
+      return
+    }
     if (mgnOutData && Array.isArray(mgnOutData) && mgnOutData.length >= 2) {
       const rateVal = parseFloat(formatUnits(mgnOutData[1], 18))
       setMgnToUsd1Rate(rateVal.toFixed(6))
@@ -207,6 +225,7 @@ function SwapView() {
   
   // Update user info when data changes
   useEffect(() => {
+    if (USE_STATIC_DATA) return
     if (userInfoData && Array.isArray(userInfoData) && userInfoData.length === 3) {
       const [limit, bought, remaining] = userInfoData
       try {
@@ -230,6 +249,7 @@ function SwapView() {
 
   // Check contract pause status
   useEffect(() => {
+    if (USE_STATIC_DATA) return
     setIsContractPaused(!!isPausedData)
     if (isPausedData) {
       showNotification(t('error.contractPaused'), 'error')
@@ -272,6 +292,15 @@ function SwapView() {
     if (isProcessing) return
     setIsRefreshing(true)
     try {
+      if (USE_STATIC_DATA) {
+        const delta = (Math.random() * 0.02) - 0.01
+        const next = Math.max(0.01, (parseFloat(usd1ToMgnRate || staticSwapData.usd1ToMgnRate)) * (1 + delta))
+        setUsd1ToMgnRate(next.toFixed(6))
+        setMgnToUsd1Rate((1 / next).toFixed(6))
+        showNotification(t('success.dataRefreshed'), 'success')
+        return
+      }
+
       // Refresh all data
       if (address) {
         await Promise.all([
@@ -301,29 +330,33 @@ function SwapView() {
 
   // Derived rate for current direction
   const computedRate = useMemo(() => {
-    if (fromToken === 'USD1' && toToken === 'MGN') return parseFloat(usd1ToMgnRate || '0')
-    if (fromToken === 'MGN' && toToken === 'USD1') return parseFloat(mgnToUsd1Rate || '0')
+    if (fromToken === 'USDT' && toToken === 'MOON') return parseFloat(usd1ToMgnRate || '0')
+    if (fromToken === 'MOON' && toToken === 'USDT') return parseFloat(mgnToUsd1Rate || '0')
     return 0
   }, [fromToken, toToken, usd1ToMgnRate, mgnToUsd1Rate])
   
   // Dynamic balances based on selected tokens
   const fromBalance = useMemo(() => {
-    if (fromToken === 'USD1') {
+    if (fromToken === 'USDT') {
+      if (USE_STATIC_DATA) return parseFloat(localUsdtBalance || '0')
       return usdtBalance ? parseFloat(formatUnits(usdtBalance, 18)) : 0
-    } else if (fromToken === 'MGN') {
+    } else if (fromToken === 'MOON') {
+      if (USE_STATIC_DATA) return parseFloat(localMgnBalance || '0')
       return mgnBalance ? parseFloat(formatUnits(mgnBalance, 18)) : 0
     }
     return 0
-  }, [fromToken, usdtBalance, mgnBalance])
+  }, [fromToken, usdtBalance, mgnBalance, localUsdtBalance, localMgnBalance])
   
   const toBalance = useMemo(() => {
-    if (toToken === 'USD1') {
+    if (toToken === 'USDT') {
+      if (USE_STATIC_DATA) return parseFloat(localUsdtBalance || '0')
       return usdtBalance ? parseFloat(formatUnits(usdtBalance, 18)) : 0
-    } else if (toToken === 'MGN') {
+    } else if (toToken === 'MOON') {
+      if (USE_STATIC_DATA) return parseFloat(localMgnBalance || '0')
       return mgnBalance ? parseFloat(formatUnits(mgnBalance, 18)) : 0
     }
     return 0
-  }, [toToken, usdtBalance, mgnBalance])
+  }, [toToken, usdtBalance, mgnBalance, localUsdtBalance, localMgnBalance])
 
   // Update toAmount when fromAmount or rate changes
   useEffect(() => {
@@ -354,6 +387,7 @@ function SwapView() {
     abi: USD1SWAP_ROUTER_ABI,
     functionName: 'swapExactTokensForTokensSupportingFeeOnTransferTokens',
     args: [parseUnits('0', 18), parseUnits('0', 18), [USDT_ADDRESS, MGN_ADDRESS], address ?? '', deadline],
+    query: { enabled: !!address && isVerified && !USE_STATIC_DATA }
   })
 
   const { data: swapMgnToUsd1Data, error: swapMgnToUsd1Error } = useSimulateContract({
@@ -361,6 +395,7 @@ function SwapView() {
     abi: USD1SWAP_ROUTER_ABI,
     functionName: 'swapExactTokensForTokensSupportingFeeOnTransferTokens',
     args: [parseUnits('0', 18), parseUnits('0', 18), [MGN_ADDRESS, USDT_ADDRESS], address ?? '', deadline],
+    query: { enabled: !!address && isVerified && !USE_STATIC_DATA }
   })
 
   // Write contract hook (wagmi v2+ uses writeContractAsync)
@@ -375,7 +410,7 @@ function SwapView() {
     error: txError 
   } = useWaitForTransactionReceipt({
     hash: pendingHash || undefined,
-    enabled: !!pendingHash,
+    enabled: !!pendingHash && !USE_STATIC_DATA,
   })
   
   // Monitor transaction status changes
@@ -475,8 +510,8 @@ function SwapView() {
       return
     }
     
-    // Purchase limit check for USD1 -> MGN
-    if (fromToken === 'USD1' && toToken === 'MGN' && userInfo) {
+    // Purchase limit check for USDT -> MOON
+    if (fromToken === 'USDT' && toToken === 'MOON' && userInfo) {
       const remainingLimit = parseFloat(userInfo.remaining)
       if (amount > remainingLimit) {
         showNotification(`${t('error.exceedLimit')} ${userInfo.remaining} ${fromToken}`, 'error')
@@ -486,6 +521,37 @@ function SwapView() {
     
     setIsProcessing(true)
     setTransactionStatusWithClear('pending', t('info.processing'))
+
+    if (USE_STATIC_DATA) {
+      const inVal = parseFloat(fromAmount || '0')
+      const outVal = parseFloat(toAmount || '0')
+
+      if (fromToken === 'USDT' && toToken === 'MOON') {
+        setLocalUsdtBalance((prev) => Math.max(0, parseFloat(prev || '0') - inVal).toFixed(6))
+        setLocalMgnBalance((prev) => (parseFloat(prev || '0') + outVal).toFixed(6))
+        setUserInfo((prev) => {
+          if (!prev) return prev
+          const bought = parseFloat(prev.bought || '0') + inVal
+          const remaining = Math.max(0, parseFloat(prev.remaining || '0') - inVal)
+          return {
+            ...prev,
+            bought: bought.toFixed(3),
+            remaining: remaining.toFixed(3),
+            hasQuota: remaining > 0
+          }
+        })
+      } else if (fromToken === 'MOON' && toToken === 'USDT') {
+        setLocalMgnBalance((prev) => Math.max(0, parseFloat(prev || '0') - inVal).toFixed(6))
+        setLocalUsdtBalance((prev) => (parseFloat(prev || '0') + outVal).toFixed(6))
+      }
+
+      setTransactionHash(`0xmock${Date.now().toString(16)}`)
+      setFromAmount('')
+      setToAmount('')
+      setIsProcessing(false)
+      setTransactionStatusWithClear('success', t('success.transactionSuccess'))
+      return
+    }
     
     try {
       const amountInWei = parseUnits(fromAmount, 18)
@@ -502,8 +568,8 @@ function SwapView() {
       }
       setIsLiquidityInsufficient(false)
       
-      if (fromToken === 'USD1' && toToken === 'MGN') {
-        // USD1->MGN: 使用TRADING_ADDRESS合约的buy方法
+      if (fromToken === 'USDT' && toToken === 'MOON') {
+        // USDT->MOON: 使用TRADING_ADDRESS合约的buy方法
         // 确保USDT授权到TRADING_ADDRESS
         const allowance = BigInt(usdtAllowanceForTrading ?? '0')
         if (!usdtAllowanceForTrading || allowance < amountInWei) {
@@ -550,12 +616,12 @@ function SwapView() {
         setTransactionStatus('pending')
         showNotification(`${t('info.pending')} Hash: ${tx.slice(0, 10)}...`, 'info')
         
-      } else if (fromToken === 'MGN' && toToken === 'USD1') {
-        // Ensure MGN allowance with proper status updates
+      } else if (fromToken === 'MOON' && toToken === 'USDT') {
+        // Ensure MOON allowance with proper status updates
         const allowance = BigInt(mgnAllowance ?? '0')
         if (!mgnAllowance || allowance < amountInWei) {
           setTransactionStatus('approving')
-          showNotification(`${t('info.approving')} MGN...`, 'info')
+          showNotification(`${t('info.approving')} MOON...`, 'info')
           
           try {
             const approveTx = await writeContractAsync({
@@ -624,8 +690,8 @@ function SwapView() {
 
   // 路由提要文本
   const exchangeRateText = useMemo(() => {
-    if (fromToken === 'USD1' && toToken === 'MGN') return `1 USD1 ≈ ${usd1ToMgnRate} ${toToken}`
-    if (fromToken === 'MGN' && toToken === 'USD1') return `1 MGN ≈ ${mgnToUsd1Rate} USD1`
+    if (fromToken === 'USDT' && toToken === 'MOON') return `1 USDT ≈ ${usd1ToMgnRate} ${toToken}`
+    if (fromToken === 'MOON' && toToken === 'USDT') return `1 MOON ≈ ${mgnToUsd1Rate} USDT`
     return `1 ${fromToken} ≈ 0 ${toToken}`
   }, [fromToken, toToken, usd1ToMgnRate, mgnToUsd1Rate])
 
@@ -756,8 +822,8 @@ function SwapView() {
                     <div className="flex items-center gap-2">
                       <button className="bg-primary/20 hover:bg-primary/40 text-primary text-[10px] font-bold px-2 py-1 rounded-md transition-all" onClick={setMaxAmount}>MAX</button>
                       <div className="flex items-center gap-2 bg-background-dark border border-white/10 px-3 py-2 rounded-xl cursor-pointer hover:bg-white/5 transition-all">
-                        <div className={`size-6 ${fromToken === 'USD1' ? 'bg-green-500/20' : 'bg-primary/20'} rounded-full flex items-center justify-center`}>
-                          <img src={fromToken === 'USD1' ? '/img/usd1.png' : '/img/logo.svg'} alt={fromToken} className="size-6" />
+                        <div className={`size-6 ${fromToken === 'USDT' ? 'bg-green-500/20' : 'bg-primary/20'} rounded-full flex items-center justify-center`}>
+                          <img src={fromToken === 'USDT' ? '/img/usdt.png' : '/img/logo.svg'} alt={fromToken} className="size-6" />
                         </div>
                         <span className="font-bold text-lg">{fromToken}</span>
                         <Icon icon="mdi:chevron-down" className="text-lg text-white/40" />
@@ -779,8 +845,8 @@ function SwapView() {
                     <input className="to-input bg-transparent border-none focus:ring-0 text-3xl font-bold text-white w-full p-0 placeholder:text-white/20" placeholder="0.00" readOnly value={toAmount} />
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-2 bg-background-dark border border-white/10 px-3 py-2 rounded-xl cursor-pointer hover:bg-white/5 transition-all">
-                        <div className={`size-6 ${toToken === 'USD1' ? 'bg-green-500/20' : 'bg-primary/20'} rounded-full flex items-center justify-center`}>
-                          <img src={toToken === 'USD1' ? '/img/usd1.png' : '/img/logo.svg'} alt={toToken} className="size-6" />
+                        <div className={`size-6 ${toToken === 'USDT' ? 'bg-green-500/20' : 'bg-primary/20'} rounded-full flex items-center justify-center`}>
+                          <img src={toToken === 'USDT' ? '/img/usdt.png' : '/img/logo.svg'} alt={toToken} className="size-6" />
                         </div>
                         <span className="font-bold text-lg">{toToken}</span>
                         <Icon icon="mdi:chevron-down" className="text-lg text-white/40" />
@@ -807,7 +873,7 @@ function SwapView() {
                   </div>
                   
                   {/* 购买限制信息 */}
-                  {fromToken === 'USD1' && toToken === 'MGN' && userInfo && (
+                  {fromToken === 'USDT' && toToken === 'MOON' && userInfo && (
                     <div className="buy-limit-info mt-4 pt-4 border-t border-primary/10">
                       <div className="flex justify-between text-lg mb-2">
                         <span className="text-white/40">{t('swap.purchaseLimit')}</span>

@@ -32,13 +32,11 @@ function Header({ isOpen, toggleMenu }) {
             <Icon icon={isOpen ? "mdi:close" : "mdi:menu"} className="text-3xl" />
             </div>
           </div>
-          <div className="flex ">
-            <div className="w-32 h-8 flex items-center">
-              <img src="/img/logo_white.svg" alt="" />
-            </div>
-            {/* <div className="flex items-center gap-3 text-white">
-              <h2 className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-primary/60 bg-clip-text text-transparent">Morgan Protocol</h2>
-            </div> */}
+          <div className="flex items-center gap-2">
+            <img src="/img/logo_white.svg" alt="MarvinX Logo" className="size-12" />
+            <h2 className="text-xl font-extrabold tracking-tight text-white">
+              Marvin<span className="text-[#7c3bed]">X</span>
+            </h2>
           </div>
         <div className="flex items-center gap-6">
           <WalletConnect />

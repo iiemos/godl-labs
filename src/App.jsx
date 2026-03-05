@@ -9,6 +9,7 @@ import Header from './components/Header.jsx'
 import CookieConsent from './components/CookieConsent.jsx'
 import HomeView from './views/HomeView.jsx'
 import StakeView from './views/StakeView.jsx'
+import MintView from './views/MintView.jsx'
 import SwapView from './views/SwapView.jsx'
 import TeamView from './views/TeamView.jsx'
 import MineView from './views/MineView.jsx'
@@ -17,6 +18,7 @@ import { useEffect, useState } from 'react'
 import ReferrerDialog from './components/ReferrerDialog.jsx'
 import Notification from './components/Notification.jsx'
 import { fetchUserInfo } from './api/index.js'
+import { USE_STATIC_DATA, MOCK_ADDRESS } from './config/mock.js'
 
 // Create React Query client
 const queryClient = new QueryClient()
@@ -74,14 +76,22 @@ const config = createConfig({
 
 // Referral binding checker component
 function ReferralBindingChecker({ onBindingStatus }) {
-  const { address, isConnected } = useAccount()
+  const { address: walletAddress, isConnected: walletConnected } = useAccount()
+  const address = USE_STATIC_DATA ? MOCK_ADDRESS : walletAddress
+  const isConnected = USE_STATIC_DATA ? true : walletConnected
   const { isVerified } = useWalletVerification()
+  const effectiveVerified = USE_STATIC_DATA ? true : isVerified
   
   useEffect(() => {
+    if (USE_STATIC_DATA) {
+      onBindingStatus(true)
+      return
+    }
+
     let mounted = true
     
     async function checkBindingStatus() {
-      if (!isConnected || !address || !isVerified) {
+      if (!isConnected || !address || !effectiveVerified) {
         if (mounted) onBindingStatus(null)
         return
       }
@@ -117,7 +127,7 @@ function ReferralBindingChecker({ onBindingStatus }) {
     // Only check if user is connected and has an address
     checkBindingStatus()
     return () => { mounted = false }
-  }, [address, isConnected, isVerified, onBindingStatus])
+  }, [address, isConnected, effectiveVerified, onBindingStatus])
   
   return null
 }
@@ -125,14 +135,21 @@ function ReferralBindingChecker({ onBindingStatus }) {
 function AppContent() {
   const location = useLocation()
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false)
-  const { address, isConnected } = useAccount()
-  const [isVerified, setIsVerified] = useState(false)
+  const { address: walletAddress, isConnected: walletConnected } = useAccount()
+  const address = USE_STATIC_DATA ? MOCK_ADDRESS : walletAddress
+  const isConnected = USE_STATIC_DATA ? true : walletConnected
+  const [isVerified, setIsVerified] = useState(USE_STATIC_DATA)
   const [globalReferrerVisible, setGlobalReferrerVisible] = useState(false)
   const [hasClosedReferrerDialog, setHasClosedReferrerDialog] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [notificationId, setNotificationId] = useState(1)
 
   useEffect(() => {
+    if (USE_STATIC_DATA) {
+      setIsVerified(true)
+      return
+    }
+
     if (isConnected && address) {
       const verified = localStorage.getItem(`signature_verified_${address}`) === 'true'
       setIsVerified(verified)
@@ -142,7 +159,7 @@ function AppContent() {
   }, [address, isConnected])
 
   useEffect(() => {
-    if (!isVerified) {
+    if (!isVerified && !USE_STATIC_DATA) {
       setGlobalReferrerVisible(false)
     }
   }, [isVerified])
@@ -153,6 +170,7 @@ function AppContent() {
   
   // Handle referral binding status
   const handleBindingStatus = (bound) => {
+    if (USE_STATIC_DATA) return
     console.log('Handling binding status:', bound)
     if (bound === false && !hasClosedReferrerDialog) {
       console.log('User not bound, showing referrer dialog')
@@ -183,7 +201,7 @@ function AppContent() {
   }
 
   return (
-    <WalletVerificationContext.Provider value={{ isVerified, setIsVerified }}>
+    <WalletVerificationContext.Provider value={{ isVerified: USE_STATIC_DATA ? true : isVerified, setIsVerified }}>
       <NotificationContext.Provider value={{ addNotification }}>
         <div className="bg-background-light dark:bg-background-dark text-white min-h-screen">
           {/* 在除了首页之外的页面显示 Header */}
@@ -201,6 +219,7 @@ function AppContent() {
               <Routes>
                 <Route path="/" element={<HomeView />} />
                 <Route path="/stake" element={<StakeView />} />
+                <Route path="/mint" element={<MintView />} />
                 <Route path="/swap" element={<SwapView />} />
                 <Route path="/team" element={<TeamView />} />
                 <Route path="/mine" element={<MineView />} />

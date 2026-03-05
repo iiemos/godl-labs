@@ -19,14 +19,18 @@ import CommunityRewardABI from '../abis/CommunityReward.json'
 import S6RewardDistributorABI from '../abis/S6RewardDistributor.json'
 import NodeRewardDistributorABI from '../abis/NodeRewardDistributor.json'
 import { useNotification, useWalletVerification } from '../App.jsx'
+import { MOCK_ADDRESS, USE_STATIC_DATA } from '../config/mock.js'
 
 function MineView() {
-  const { address, isConnected } = useAccount()
+  const { address: walletAddress, isConnected: walletConnected } = useAccount()
+  const address = USE_STATIC_DATA ? MOCK_ADDRESS : walletAddress
+  const isConnected = USE_STATIC_DATA ? true : walletConnected
   const publicClient = usePublicClient()
   const { data: walletClient } = useWalletClient()
   const { t } = useTranslation()
   const { addNotification } = useNotification()
-  const { isVerified } = useWalletVerification()
+  const { isVerified: walletVerified } = useWalletVerification()
+  const isVerified = USE_STATIC_DATA ? true : walletVerified
   const CHAIN_ID = parseInt(import.meta.env.VITE_MOVA_CHAIN_ID || '61900', 10)
   
   // const {  isConnected } = useAccount();
@@ -199,6 +203,17 @@ function MineView() {
         setS6Reward(null)
         return
       }
+
+      if (USE_STATIC_DATA) {
+        setS6Reward({
+          success: true,
+          pending_reward: '256400000000000000000',
+          is_eligible: true
+        })
+        setS6RewardLoading(false)
+        return
+      }
+
       setS6RewardLoading(true)
       try {
         if (publicClient && CONTRACTS.S6_REWARD_DISTRIBUTOR) {
@@ -239,6 +254,18 @@ function MineView() {
         setIsNode(false)
         return
       }
+
+      if (USE_STATIC_DATA) {
+        setIsNode(true)
+        setNodeReward({
+          success: true,
+          pending_reward: '88200000000000000000',
+          is_eligible: true
+        })
+        setNodeRewardLoading(false)
+        return
+      }
+
       setNodeRewardLoading(true)
       try {
         if (publicClient && CONTRACTS.NODE_REWARD_DISTRIBUTOR) {
@@ -312,6 +339,19 @@ function MineView() {
 
   // Claim community reward
   const claimCommunityReward = async () => {
+    if (USE_STATIC_DATA) {
+      if (!communityReward?.is_eligible || communityRewardClaiming) return
+      setCommunityRewardClaiming(true)
+      setCommunityReward({
+        success: true,
+        is_eligible: false,
+        pending_reward: '0'
+      })
+      addNotification('success', 'Community reward claimed successfully!')
+      setCommunityRewardClaiming(false)
+      return
+    }
+
     // 参数检查：确保用户已验证、已连接钱包、有地址、有资格领取奖励、有walletClient且不在领取中
     if (!isVerified || !isConnected || !address || !communityReward?.is_eligible || !walletClient || communityRewardClaiming) return
     
@@ -385,6 +425,19 @@ function MineView() {
   
   // Claim S6 reward
   const claimS6Reward = async () => {
+    if (USE_STATIC_DATA) {
+      if (!s6Reward?.is_eligible || s6RewardClaiming) return
+      setS6RewardClaiming(true)
+      setS6Reward({
+        success: true,
+        pending_reward: '0',
+        is_eligible: false
+      })
+      addNotification('success', 'S6 reward claimed successfully!')
+      setS6RewardClaiming(false)
+      return
+    }
+
     if (!isVerified || !isConnected || !address || !s6Reward?.is_eligible || !walletClient || s6RewardClaiming) return
     
     try {
@@ -435,6 +488,19 @@ function MineView() {
   
   // Claim node reward
   const claimNodeReward = async () => {
+    if (USE_STATIC_DATA) {
+      if (!nodeReward?.is_eligible || nodeRewardClaiming) return
+      setNodeRewardClaiming(true)
+      setNodeReward({
+        success: true,
+        pending_reward: '0',
+        is_eligible: false
+      })
+      addNotification('success', 'Node reward claimed successfully!')
+      setNodeRewardClaiming(false)
+      return
+    }
+
     if (!isVerified || !isConnected || !address || !nodeReward?.is_eligible || !walletClient || nodeRewardClaiming) return
     
     try {
@@ -482,14 +548,6 @@ function MineView() {
     }
   }
 
-  // Calculate total staked from records
-  const totalStaked = stakeRecords.reduce((sum, stake) => {
-    if (!stake.status) { // Only count active stakes
-      return sum + BigInt(stake.amount || '0')
-    }
-    return sum
-  }, BigInt(0))
-  
   const getRewardAmountByTypes = (types) => {
     if (!rewardSummary || !Array.isArray(rewardSummary.data)) return '0'
     const reward = rewardSummary.data.find(item => types.includes(item.reward_type))
@@ -522,6 +580,53 @@ function MineView() {
     const total = BigInt(stakeReward) + BigInt(teamReward) + BigInt(directReward)
     return total.toString()
   }
+
+  const latestMintTimestamp = (() => {
+    if (!Array.isArray(stakeRecords) || stakeRecords.length === 0) return 0
+    return stakeRecords.reduce((latest, record) => {
+      const timestamp = Number(record?.stake_time || record?.oriStakeTime || 0)
+      if (!Number.isFinite(timestamp)) return latest
+      return Math.max(latest, timestamp)
+    }, 0)
+  })()
+
+  const getElapsedFromTimestamp = (timestamp) => {
+    const ts = Number(timestamp || 0)
+    if (!ts) return '--'
+    const now = Math.floor(Date.now() / 1000)
+    const diff = Math.max(0, now - ts)
+    const days = Math.floor(diff / 86400)
+    const hours = Math.floor((diff % 86400) / 3600)
+    const minutes = Math.floor((diff % 3600) / 60)
+    return `${days}天 ${hours}小时 ${minutes}分钟`
+  }
+
+  const pendingFuelDividendWei = nodeReward?.pending_reward || '0'
+  const pendingSlippageDividendWei = communityReward?.pending_reward || '0'
+  const claimedSlippageDividendWei = getTeamReward()
+  const claimedFuelDividendWei = getDirectReferralReward()
+
+  const todayDividendPoolWei = todayStake?.team || '0'
+  const myWeightPowerWei = userInfo?.personal_performance || '0'
+  const claimedDividendWei = getAllReward()
+  const pendingDividendWei = communityReward?.pending_reward || '0'
+
+  const dynamicRewardWei = nodeReward?.pending_reward || '0'
+  const dynamicRewardBigInt = (() => {
+    try {
+      return BigInt(dynamicRewardWei || '0')
+    } catch {
+      return 0n
+    }
+  })()
+  const dynamicWithdrawableWei = (dynamicRewardBigInt / 2n).toString()
+  const dynamicBurnableWei = (dynamicRewardBigInt - dynamicRewardBigInt / 2n).toString()
+  const fuelTierRewardWei = nodeReward?.pending_reward || '0'
+
+  const handleForceSellOrBurn = () => {
+    addNotification('info', '强制卖出/销毁分红功能开发中')
+  }
+
   return (
     <div className=" dark:bg-background-dark text-white min-h-screen">
       <div className="flex flex-col lg:flex-row h-screen overflow-hidden">
@@ -563,10 +668,10 @@ function MineView() {
                   <div className="text-right flex flex-col items-center md:items-end">
                     <p className="text-white/60 text-sm uppercase tracking-widest font-semibold mb-1">{t('mine.totalPerformance')}</p>
                     <p className="text-5xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-white/40">
-                      ${formatWei(userInfo?.personal_performance || '0', 2)} <span className="text-xl text-primary align-middle ml-2 font-medium">USD1</span>
+                      ${formatWei(userInfo?.personal_performance || '0', 2)} <span className="text-xl text-primary align-middle ml-2 font-medium">USDT</span>
                     </p>
                     <p className="text-white/40 text-sm mt-2">
-                      {t('team.team')}: ${formatWei(userInfo?.team_performance || '0', 2)} USD1
+                      {t('team.team')}: ${formatWei(userInfo?.team_performance || '0', 2)} USDT
                     </p>
                   </div>
                 </div>
@@ -584,7 +689,7 @@ function MineView() {
                     </p>
                     <p className="text-[#0bda6f] text-sm font-medium flex items-center">
                       <Icon icon="mdi:check-circle" className="text-sm mr-1" />
-                      USD1
+                      USDT
                     </p>
                   </div>
                 </div>
@@ -598,7 +703,7 @@ function MineView() {
                       {summaryLoading ? '...' : '$'+formatWei(getTeamReward(), 2)}
                     </p>
                     <p className="text-[#0bda6f] text-sm font-medium flex items-center">
-                      USD1
+                      USDT
                     </p>
                   </div>
                 </div>
@@ -612,7 +717,7 @@ function MineView() {
                       {summaryLoading ? '...' : '$'+formatWei(getDirectReferralReward(), 2)}
                     </p>
                     <p className="text-blue-400 text-sm font-medium flex items-center">
-                      USD1
+                      USDT
                     </p>
                   </div>
                 </div>
@@ -626,186 +731,15 @@ function MineView() {
                       {summaryLoading ? '...' : '$'+formatWei(getAllReward(), 2)}
                     </p>
                     <p className="text-purple-400 text-sm font-medium flex items-center">
-                      USD1
+                      USDT
                     </p>
                   </div>
                 </div>
               </div>
               
               {/* Main Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Left Column: Asset Balances */}
-                <div className="lg:col-span-6 space-y-6">
-                  <div className="flex items-center justify-between px-2">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
-                      <Icon icon="mdi:account-balance-wallet" className="text-primary" />
-                      {t('mine.assetBalances')}
-                    </h2>
-                    <button className="text-xs text-primary font-bold hover:underline">{t('mine.manageAll')}</button>
-                  </div>
-                  {/* Reward Modules */}
-                  {(userInfo?.team_level >= 3 || isNode) ? (
-                    <div className="space-y-4">
-                      {/* Community Reward (S3-S5) */}
-                      {userInfo?.team_level >= 3 && (
-                        <div className="glass-panel p-6 rounded-xl">
-                          <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold flex items-center gap-2">
-                              <Icon icon="mdi:community" className="text-primary" />
-                              {t('mine.levelReward')} (S3-S6)
-                            </h3>
-                          </div>
-                          {rewardLoading ? (
-                            <div className="text-center text-white/40 py-8">{t('mine.loading')}</div>
-                          ) : communityReward ? (
-                            <div className="space-y-4">
-                              <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-                                <div>
-                                  <p className="text-white/60 text-sm"></p>
-                                  <p className="text-lg font-bold mt-1">
-                                    {communityReward.is_eligible && (
-                                      <span className="text-green-400">{t('mine.eligible')}</span>
-                                    )}
-                                  </p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="text-white/60 text-sm">{t('mine.pendingReward')}</p>
-                                  <p className="text-3xl font-bold mt-1">{formatWei(communityReward.pending_reward, 2)} MGN</p>
-                                </div>
-                              </div>
-                              <button 
-                                className={`w-full py-2 border border-primary/50 bg-border-dark/50 rounded-lg font-bold transition-all flex items-center justify-center gap-2 ${
-                                  communityReward.is_eligible && !communityRewardClaiming
-                                    ? 'bg-primary hover:bg-primary/80 text-white'
-                                    : 'bg-border-dark/50 cursor-not-allowed text-white/30'
-                                }`}
-                                onClick={claimCommunityReward}
-                                disabled={!communityReward.is_eligible || communityRewardClaiming}
-                              >
-                                {communityRewardClaiming ? (
-                                  <>
-                                    <Icon icon="mdi:loading" className="animate-spin" />
-                                    loading...
-                                  </>
-                                ) : (
-                                  <>
-                                    {t('mine.claimReward')}
-                                    <Icon icon={communityReward.is_eligible ? 'mdi:arrow-right' : 'mdi:lock'} />
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="text-center text-white/40 py-8">{t('mine.noCommunityRewardData')}</div>
-                          )}
-                        </div>
-                      )}
-                      
-                      {/* S6 Reward */}
-                      {userInfo?.team_level >= 6 && (
-                        <div className="glass-panel p-6 rounded-xl">
-                          <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold flex items-center gap-2">
-                              <Icon icon="mdi:star" className="text-yellow-400" />
-                              S6 Reward
-                            </h3>
-                          </div>
-                          {s6RewardLoading ? (
-                            <div className="text-center text-white/40 py-8">{t('mine.loading')}</div>
-                          ) : s6Reward ? (
-                            <div className="space-y-4">
-                              <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-                                <div>
-                                  <p className="text-white/60 text-sm"></p>
-                                  <p className="text-lg font-bold mt-1">
-                                    {s6Reward.is_eligible && (
-                                      <span className="text-green-400">{t('mine.eligible')}</span>
-                                    )}
-                                  </p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="text-white/60 text-sm">{t('mine.pendingReward')}</p>
-                                  <p className="text-3xl font-bold mt-1">${formatWei(s6Reward.pending_reward, 2)} USD1</p>
-                                </div>
-                              </div>
-                              <button 
-                                className={`w-full py-2 border border-primary/50 bg-border-dark/50 rounded-lg font-bold transition-all flex items-center justify-center gap-2 ${
-                                  s6Reward.is_eligible && !s6RewardClaiming
-                                    ? 'bg-primary hover:bg-primary/80 text-white'
-                                    : 'bg-border-dark/50 cursor-not-allowed text-white/30'
-                                }`}
-                                onClick={claimS6Reward}
-                                disabled={!s6Reward.is_eligible || s6RewardClaiming}
-                              >
-                                {s6RewardClaiming ? (
-                                  <>
-                                    <Icon icon="mdi:loading" className="animate-spin" />
-                                    loading...
-                                  </>
-                                ) : (
-                                  <>
-                                    {t('mine.claimReward')}
-                                    <Icon icon={s6Reward.is_eligible ? 'mdi:arrow-right' : 'mdi:lock'} />
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="text-center text-white/40 py-8">{t('mine.noCommunityRewardData')}</div>
-                          )}
-                        </div>
-                      )}
-                      
-                      {/* Node Reward */}
-                      {isNode && (
-                        <div className="glass-panel p-6 rounded-xl space-y-4 group hover:border-primary/50 transition-all">
-                          <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-3">
-                              <div className="size-10 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
-                                <Icon icon="mdi:hub" />
-                              </div>
-                              <div>
-                                <p className="font-bold">{t('mine.nodeReward')}</p>
-                                <p className="text-xs text-white/40">{t('mine.nodeParticipation')}</p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-bold text-lg">{nodeRewardLoading ? t('mine.loading') : `${formatWei(nodeReward?.pending_reward || '0', 2)}`}</p>
-                              <p className="text-[10px] text-white/40">MGN</p>
-                            </div>
-                          </div>
-                          <button 
-                            className={`w-full py-2 border border-primary/50 bg-border-dark/50 rounded-lg font-bold transition-all flex items-center justify-center gap-2 ${
-                              nodeReward?.is_eligible && !nodeRewardClaiming
-                                ? 'bg-primary hover:bg-primary/80 text-white'
-                                : 'bg-border-dark/50 cursor-not-allowed text-white/30'
-                            }`}
-                            onClick={claimNodeReward}
-                            disabled={!nodeReward?.is_eligible || nodeRewardClaiming}
-                          >
-                            {nodeRewardClaiming ? (
-                              <>
-                                <Icon icon="mdi:loading" className="animate-spin" />
-                                loading...
-                              </>
-                            ) : (
-                              <>
-                                {t('mine.claimReward')}
-                                <Icon icon={nodeReward?.is_eligible ? 'mdi:arrow-right' : 'mdi:lock'} className="text-sm" />
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="glass-panel p-6 rounded-xl">
-                      <div className="text-center text-white/40 py-8">{t('mine.noPendingReward')}</div>
-                    </div>
-                  )}
-                </div>
-                {/* Center Column: Personal Staking Stats */}
-                <div className="lg:col-span-6 space-y-6">
+              <div className="space-y-6">
+                <div className="space-y-6">
                   {/* Unstake Records */}
                   <div className="glass-panel p-6 rounded-xl">
                     <div className="flex justify-between items-center mb-4">
@@ -821,7 +755,7 @@ function MineView() {
                         {unstakeRecords.slice(0, 5).map((unstake, index) => (
                           <div key={unstake.id || index} className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                             <div>
-                              <p className="font-medium">{t('stake.reward')}: ${formatWei(unstake.reward, 4)} USD1</p>
+                              <p className="font-medium">{t('stake.reward')}: ${formatWei(unstake.reward, 4)} USDT</p>
                               <div className="flex items-center gap-4 mt-1">
                                 <p className="text-xs text-white/40">{formatTimestamp(unstake.unstake_time)}</p>
                                 {/* <p className="text-xs text-white/40">{transformDay(unstake.stake_index)}</p> */}
@@ -835,8 +769,166 @@ function MineView() {
                       </div>
                     )}
                   </div>
-                  
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    {/* Node Income */}
+                    <div className="glass-panel p-6 rounded-xl space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-lg flex items-center gap-2">
+                          <Icon icon="mdi:hub" className="text-primary" />
+                          节点收益
+                        </h3>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="p-4 bg-white/5 rounded-lg flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-white/60 text-sm">待领取燃料分红收益</p>
+                            <p className="text-xl font-bold mt-1">{nodeRewardLoading ? '...' : formatWei(pendingFuelDividendWei, 4)} MOON</p>
+                          </div>
+                          <button
+                            className={`px-4 py-2 rounded-lg font-bold transition-all ${
+                              nodeReward?.is_eligible && !nodeRewardClaiming
+                                ? 'bg-primary text-white hover:opacity-90'
+                                : 'bg-border-dark/50 cursor-not-allowed text-white/30'
+                            }`}
+                            onClick={claimNodeReward}
+                            disabled={!nodeReward?.is_eligible || nodeRewardClaiming}
+                          >
+                            {nodeRewardClaiming ? 'loading...' : t('mine.claimReward')}
+                          </button>
+                        </div>
+                        <div className="p-4 bg-white/5 rounded-lg flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-white/60 text-sm">待领取滑点分红收益</p>
+                            <p className="text-xl font-bold mt-1">{rewardLoading ? '...' : formatWei(pendingSlippageDividendWei, 4)} MOON</p>
+                          </div>
+                          <button
+                            className={`px-4 py-2 rounded-lg font-bold transition-all ${
+                              communityReward?.is_eligible && !communityRewardClaiming
+                                ? 'bg-primary text-white hover:opacity-90'
+                                : 'bg-border-dark/50 cursor-not-allowed text-white/30'
+                            }`}
+                            onClick={claimCommunityReward}
+                            disabled={!communityReward?.is_eligible || communityRewardClaiming}
+                          >
+                            {communityRewardClaiming ? 'loading...' : t('mine.claimReward')}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="p-3 bg-white/5 rounded-lg">
+                          <p className="text-white/60 text-xs">已领取滑点收益</p>
+                          <p className="text-base font-bold mt-1">{summaryLoading ? '...' : formatWei(claimedSlippageDividendWei, 4)} USDT</p>
+                        </div>
+                        <div className="p-3 bg-white/5 rounded-lg">
+                          <p className="text-white/60 text-xs">已领取燃料分红收益</p>
+                          <p className="text-base font-bold mt-1">{summaryLoading ? '...' : formatWei(claimedFuelDividendWei, 4)} MOON</p>
+                        </div>
+                      </div>
+                    </div>
 
+                    {/* Dividend Data */}
+                    <div className="glass-panel p-6 rounded-xl space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-lg flex items-center gap-2">
+                          <Icon icon="mdi:chart-donut" className="text-primary" />
+                          分红数据
+                        </h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="p-4 bg-white/5 rounded-lg">
+                          <p className="text-white/60 text-sm">今日分红池总数</p>
+                          <p className="text-xl font-bold mt-1">{formatWei(todayDividendPoolWei, 4)} MOON</p>
+                        </div>
+                        <div className="p-4 bg-white/5 rounded-lg">
+                          <p className="text-white/60 text-sm">我的权重算力</p>
+                          <p className="text-xl font-bold mt-1">{formatWei(myWeightPowerWei, 4)}</p>
+                        </div>
+                        <div className="p-4 bg-white/5 rounded-lg">
+                          <p className="text-white/60 text-sm">已领取分红收益</p>
+                          <p className="text-xl font-bold mt-1">{summaryLoading ? '...' : formatWei(claimedDividendWei, 4)} USDT</p>
+                        </div>
+                        <div className="p-4 bg-white/5 rounded-lg">
+                          <p className="text-white/60 text-sm">我的待领取分红收益</p>
+                          <p className="text-xl font-bold mt-1">{rewardLoading ? '...' : formatWei(pendingDividendWei, 4)} MOON</p>
+                        </div>
+                      </div>
+                      <button
+                        className={`w-full py-2 rounded-lg font-bold transition-all ${
+                          communityReward?.is_eligible && !communityRewardClaiming
+                            ? 'bg-primary text-white hover:opacity-90'
+                            : 'bg-border-dark/50 cursor-not-allowed text-white/30'
+                        }`}
+                        onClick={claimCommunityReward}
+                        disabled={!communityReward?.is_eligible || communityRewardClaiming}
+                      >
+                        {communityRewardClaiming ? 'loading...' : t('mine.claimReward')}
+                      </button>
+                    </div>
+
+                    {/* Dynamic Reward */}
+                    <div className="glass-panel p-6 rounded-xl space-y-4 xl:col-span-2">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-lg flex items-center gap-2">
+                          <Icon icon="mdi:flash" className="text-primary" />
+                          动态奖励
+                        </h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="p-4 bg-white/5 rounded-lg space-y-3">
+                          <p className="text-white/60 text-sm">50%可提现代币</p>
+                          <p className="text-xl font-bold">{nodeRewardLoading ? '...' : formatWei(dynamicWithdrawableWei, 4)} MOON</p>
+                          <button
+                            className={`w-full py-2 rounded-lg font-bold transition-all ${
+                              nodeReward?.is_eligible && !nodeRewardClaiming
+                                ? 'bg-primary text-white hover:opacity-90'
+                                : 'bg-border-dark/50 cursor-not-allowed text-white/30'
+                            }`}
+                            onClick={claimNodeReward}
+                            disabled={!nodeReward?.is_eligible || nodeRewardClaiming}
+                          >
+                            {nodeRewardClaiming ? 'loading...' : t('mine.claimReward')}
+                          </button>
+                        </div>
+                        <div className="p-4 bg-white/5 rounded-lg space-y-3">
+                          <p className="text-white/60 text-sm">50%可卖出/销毁分红数</p>
+                          <p className="text-xl font-bold">{nodeRewardLoading ? '...' : formatWei(dynamicBurnableWei, 4)} MOON</p>
+                          <button
+                            className="w-full py-2 rounded-lg font-bold bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition-all"
+                            onClick={handleForceSellOrBurn}
+                          >
+                            强制卖出 / 销毁分红
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="p-3 bg-white/5 rounded-lg">
+                          <p className="text-white/60 text-xs">上次铸造时间</p>
+                          <p className="text-sm font-bold mt-1">{latestMintTimestamp ? formatTimestamp(latestMintTimestamp) : '--'}</p>
+                        </div>
+                        <div className="p-3 bg-white/5 rounded-lg">
+                          <p className="text-white/60 text-xs">距离上次铸造已过时间</p>
+                          <p className="text-sm font-bold mt-1">{getElapsedFromTimestamp(latestMintTimestamp)}</p>
+                        </div>
+                      </div>
+                      <div className="p-4 bg-white/5 rounded-lg flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-white/60 text-sm">燃料费级差奖励</p>
+                          <p className="text-xl font-bold mt-1">{nodeRewardLoading ? '...' : formatWei(fuelTierRewardWei, 4)} MOON</p>
+                        </div>
+                        <button
+                          className={`px-4 py-2 rounded-lg font-bold transition-all ${
+                            nodeReward?.is_eligible && !nodeRewardClaiming
+                              ? 'bg-primary text-white hover:opacity-90'
+                              : 'bg-border-dark/50 cursor-not-allowed text-white/30'
+                          }`}
+                          onClick={claimNodeReward}
+                          disabled={!nodeReward?.is_eligible || nodeRewardClaiming}
+                        >
+                          {nodeRewardClaiming ? 'loading...' : t('mine.claimReward')}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </main>

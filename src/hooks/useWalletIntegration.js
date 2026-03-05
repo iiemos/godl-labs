@@ -1,9 +1,12 @@
 import { useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import useStakeStore from '../stores/stakeStore';
+import { MOCK_ADDRESS, USE_STATIC_DATA } from '../config/mock.js';
 
 export const useWalletIntegration = () => {
-  const { address, isConnected } = useAccount();
+  const { address: walletAddress, isConnected: walletConnected } = useAccount();
+  const address = USE_STATIC_DATA ? MOCK_ADDRESS : walletAddress;
+  const isConnected = USE_STATIC_DATA ? true : walletConnected;
   
   const { 
     setConnection,

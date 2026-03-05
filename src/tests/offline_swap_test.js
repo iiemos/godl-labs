@@ -26,15 +26,15 @@ function runScenario(s) {
 }
 
 function main() {
-  // scenario 1: USD1 -> MGN 1 USD1
-  const s1 = { fromToken: 'USD1', toToken: 'MGN', fromAmount: '10', rate: USD1_TO_MGN, slippage: 0.5 }
+  // scenario 1: USDT -> MOON 1 USDT
+  const s1 = { fromToken: 'USDT', toToken: 'MOON', fromAmount: '10', rate: USD1_TO_MGN, slippage: 0.5 }
   const r1 = runScenario(s1)
-  console.log('Scenario USD1->MGN:', r1)
+  console.log('Scenario USDT->MOON:', r1)
 
-  // scenario 2: MGN -> USD1 5 MG N
-  const s2 = { fromToken: 'MGN', toToken: 'USD1', fromAmount: '2', rate: MGN_TO_USD1, slippage: 0.8 }
+  // scenario 2: MOON -> USDT 5 MG N
+  const s2 = { fromToken: 'MOON', toToken: 'USDT', fromAmount: '2', rate: MGN_TO_USD1, slippage: 0.8 }
   const r2 = runScenario(s2)
-  console.log('Scenario MGN->USD1:', r2)
+  console.log('Scenario MOON->USDT:', r2)
 }
 
 main()

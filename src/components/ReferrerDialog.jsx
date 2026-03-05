@@ -4,6 +4,7 @@ import { ethers } from 'ethers'
 import TEAMLEVEL_ABI from '../abis/TeamLevel.json'
 import { useTranslation } from "react-i18next";
 import { useNotification } from '../App.jsx';
+import { MOCK_ADDRESS, USE_STATIC_DATA } from '../config/mock.js';
 
 // Global Referrer Dialog
 // Checks if the current address has a referrer bound; if not, allows user to bind one.
@@ -24,6 +25,13 @@ function ReferrerDialog({ visible, onClose, autoCloseIfBound = true }) {
     if (!visible) return
     let mounted = true
     async function check() {
+      if (USE_STATIC_DATA) {
+        const bound = localStorage.getItem('mock_referrer_bound') === 'true';
+        if (mounted) setIsBound(bound);
+        if (mounted && bound && autoCloseIfBound) onClose();
+        return;
+      }
+
       try {
         setChecking(true)
         if (mounted) setIsBound(false)
@@ -73,6 +81,26 @@ function ReferrerDialog({ visible, onClose, autoCloseIfBound = true }) {
         addNotification('error', '请提供有效的邀请人地址')
         return
       }
+
+      if (USE_STATIC_DATA) {
+        if (address.toLowerCase() === MOCK_ADDRESS.toLowerCase()) {
+          addNotification('error', '邀请人地址不能是自己')
+          return
+        }
+        if (address === '0x0000000000000000000000000000000000000000') {
+          addNotification('error', '邀请人地址不能是零地址')
+          return
+        }
+        setBinding({ status: 'loading', tx: '' })
+        localStorage.setItem('mock_referrer_bound', 'true')
+        localStorage.setItem('mock_referrer_address', address)
+        setIsBound(true)
+        setBinding({ status: 'success', tx: 'mock-tx-hash' })
+        addNotification('success', t('common.referrerBindSuccess'))
+        setTimeout(() => onClose(), 800)
+        return
+      }
+
       if (typeof window === 'undefined' || !window.ethereum) {
         addNotification('error', '未检测到以太坊钱包')
         return

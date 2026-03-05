@@ -7,6 +7,8 @@ import ERC20ABI from './abis/ERC20.json';
 import TeamLevelABI from './abis/TeamLevel.json';
 import RewardTrackerABI from './abis/RewardTracker.json';
 import AigInsuranceABI from './abis/AigInsurance.json';
+import { USE_STATIC_DATA } from './config/mock.js';
+import { staticStakeData } from './mocks/staticData.js';
 
 // Contract addresses - 从Vue项目获取的真实合约地址
 const CONTRACTS = {
@@ -20,7 +22,7 @@ const CONTRACTS = {
   COMMUNITY_REWARD: import.meta.env.VITE_COMMUNITY_REWARD_ADDRESS || '0x9FcE389d7f6ec79f89dFaF822450EcBdfA2bf24F',
   ASSET_PACK: import.meta.env.VITE_ASSET_PACK_ADDRESS || '0xE09112bEF5520fEfA49110961F47ca53262eE72E',
   INTERACTION_CONTRACT: import.meta.env.VITE_INTERACTION_CONTRACT_ADDRESS || '0xD049B52d29e23c8353E4214E74C0825C641bDc4A',
-  MGN: import.meta.env.VITE_MGN_ADDRESS || '0x1b21dcffe9fd430518d41c59ab095cde5ec4d2f1',
+  MOON: import.meta.env.VITE_MGN_ADDRESS || '0x1b21dcffe9fd430518d41c59ab095cde5ec4d2f1',
   S6_REWARD_DISTRIBUTOR: import.meta.env.VITE_S6_REWARD_DISTRIBUTOR_ADDRESS || '0xC795B7fE8aA5B02e0159cf42f294472E5A631D79',
   NODE_REWARD_DISTRIBUTOR: import.meta.env.VITE_NODE_REWARD_DISTRIBUTOR_ADDRESS || '0x3e9E49C8eE7aA505A4d9E89fC22154F9dc53a41B'
 };
@@ -37,6 +39,7 @@ let contractInstances = {
 
 // Initialize contracts with signer/provider
 export const initializeContracts = (signer, provider) => {
+  if (USE_STATIC_DATA) return;
   try {
     if (signer) {
       contractInstances.staking = new ethers.Contract(CONTRACTS.STAKING, StakingABI, signer);
@@ -60,6 +63,12 @@ export const initializeContracts = (signer, provider) => {
 
 // Get token balances
 export const getBalances = async (address) => {
+  if (USE_STATIC_DATA) {
+    return {
+      usdtBalance: staticStakeData.usdtBalance,
+      aigBalance: staticStakeData.aigBalance
+    };
+  }
   try {
     if (!address || !contractInstances.usdt || !contractInstances.aig) {
       return { usdtBalance: '0', aigBalance: '0' };
@@ -82,6 +91,14 @@ export const getBalances = async (address) => {
 
 // Check token allowances
 export const checkAllowances = async (address, amount) => {
+  if (USE_STATIC_DATA) {
+    return {
+      usdtAllowance: '1000000',
+      aigAllowance: '1000000',
+      needsUsdtApproval: false,
+      needsAigApproval: false
+    };
+  }
   try {
     if (!address || !contractInstances.staking || !contractInstances.usdt || !contractInstances.aig) {
       return { usdtAllowance: '0', aigAllowance: '0', needsUsdtApproval: true, needsAigApproval: true };
@@ -109,6 +126,7 @@ export const checkAllowances = async (address, amount) => {
 
 // Approve tokens
 export const approveTokens = async (address, amount) => {
+  if (USE_STATIC_DATA) return true;
   try {
     if (!contractInstances.usdt || !contractInstances.aig) {
       throw new Error(i18n.t('error.walletNotConnected'));
@@ -140,6 +158,7 @@ export const approveTokens = async (address, amount) => {
 
 // Check if user is bound to referrer
 export const checkBindStatus = async (address) => {
+  if (USE_STATIC_DATA) return true;
   try {
     if (!address || !contractInstances.teamLevel) {
       return false;
@@ -153,6 +172,7 @@ export const checkBindStatus = async (address) => {
 
 // Stake with AIG
 export const stakeWithAIG = async (amount, stakeIndex) => {
+  if (USE_STATIC_DATA) return true;
   try {
     if (!contractInstances.staking) {
       throw new Error(i18n.t('error.walletNotConnected'));
@@ -182,6 +202,7 @@ export const stakeWithAIG = async (amount, stakeIndex) => {
 
 // Stake with AIG and inviter
 export const stakeWithAIGWithInviter = async (amount, stakeIndex, inviter) => {
+  if (USE_STATIC_DATA) return true;
   try {
     if (!contractInstances.staking) {
       throw new Error(i18n.t('error.walletNotConnected'));
@@ -206,6 +227,7 @@ export const stakeWithAIGWithInviter = async (amount, stakeIndex, inviter) => {
 
 // Unstake
 export const unstake = async (index) => {
+  if (USE_STATIC_DATA) return true;
   try {
     if (!contractInstances.staking) {
       throw new Error(i18n.t('error.walletNotConnected'));
@@ -223,6 +245,17 @@ export const unstake = async (index) => {
 
 // Get user staking info
 export const getUserStakeInfo = async (address) => {
+  if (USE_STATIC_DATA) {
+    return {
+      amounts: staticStakeData.stakeList.map((item) => parseUnits(item.amount.toString(), 18)),
+      rewards: staticStakeData.stakeList.map((item) => parseUnits((Number(item.amount) + Number(item.reward)).toString(), 18)),
+      statuses: staticStakeData.stakeList.map((item) => item.status),
+      stakeIndexes: staticStakeData.stakeList.map((item) => BigInt(item.stakeIndex)),
+      canEndDatas: staticStakeData.stakeList.map((item) => BigInt(item.canEndData)),
+      oriStakeTimes: staticStakeData.stakeList.map((item) => BigInt(item.oriStakeTime)),
+      bEndDatas: staticStakeData.stakeList.map((item) => item.bEndData),
+    };
+  }
   try {
     if (!address || !contractInstances.staking) {
       return null;
@@ -237,6 +270,7 @@ export const getUserStakeInfo = async (address) => {
 
 // Get hourly limits by type
 export const getHourlyLimits = async () => {
+  if (USE_STATIC_DATA) return staticStakeData.hourlyLimitByType;
   try {
     if (!contractInstances.staking) {
       return [0, 0];
@@ -257,6 +291,7 @@ export const getHourlyLimits = async () => {
 
 // Get remaining hourly limits
 export const getRemainingHourlyLimits = async () => {
+  if (USE_STATIC_DATA) return staticStakeData.remainingHourlyLimitByType;
   try {
     if (!contractInstances.staking) {
       return [0, 0];
@@ -277,6 +312,7 @@ export const getRemainingHourlyLimits = async () => {
 
 // Get user total staked
 export const getUserTotalStaked = async (address) => {
+  if (USE_STATIC_DATA) return staticStakeData.userTotalStaked;
   try {
     if (!address || !contractInstances.staking) {
       return '0';
@@ -291,6 +327,7 @@ export const getUserTotalStaked = async (address) => {
 
 // Get reinvest tax info
 export const getReinvestTaxInfo = async (address) => {
+  if (USE_STATIC_DATA) return staticStakeData.userReinvestTaxObj;
   try {
     if (!address || !contractInstances.aigInsurance) {
       return {
@@ -320,6 +357,7 @@ export const getReinvestTaxInfo = async (address) => {
 
 // Check if staking is started
 export const checkStakingStarted = async () => {
+  if (USE_STATIC_DATA) return true;
   try {
     if (!contractInstances.staking) {
       return false;

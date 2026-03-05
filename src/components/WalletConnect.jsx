@@ -4,6 +4,7 @@ import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
 import { ethers } from 'ethers'; // 或从 viem 导入 verifyMessage
 import { useWalletVerification } from '../App.jsx';
+import { MOCK_ADDRESS, USE_STATIC_DATA } from '../config/mock.js';
 
 function WalletConnect() {
   const { address, isConnected, chain } = useAccount();
@@ -16,6 +17,17 @@ function WalletConnect() {
   const [verificationError, setVerificationError] = useState('');
   
   const { signMessageAsync } = useSignMessage();
+
+  if (USE_STATIC_DATA) {
+    return (
+      <div className="flex items-center gap-3 bg-primary/10 px-4 py-2 rounded-xl border border-primary/30">
+        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+        <span className="text-sm font-medium" title={MOCK_ADDRESS}>
+          {MOCK_ADDRESS.slice(0, 6)}...{MOCK_ADDRESS.slice(-4)}
+        </span>
+      </div>
+    );
+  }
 
   // 1. 为当前会话生成一个唯一的 Nonce（可存储于 localStorage）
   const generateNonce = () => {

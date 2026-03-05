@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import Notification from "../components/Notification.jsx";
 import ReferrerDialog from "../components/ReferrerDialog.jsx";
 import { useWalletVerification } from '../App.jsx';
+import { MOCK_ADDRESS, USE_STATIC_DATA } from '../config/mock.js';
 import {
   fetchUserInfo,
   fetchTeamInfo,
@@ -16,9 +17,12 @@ import {
 } from "../api/index.js";
 
 function TeamView() {
-  const { address, isConnected } = useAccount();
+  const { address: walletAddress, isConnected: walletConnected } = useAccount();
+  const address = USE_STATIC_DATA ? MOCK_ADDRESS : walletAddress;
+  const isConnected = USE_STATIC_DATA ? true : walletConnected;
   const { t } = useTranslation();
-  const { isVerified } = useWalletVerification();
+  const { isVerified: walletVerified } = useWalletVerification();
+  const isVerified = USE_STATIC_DATA ? true : walletVerified;
   // const {  isConnected } = useAccount();
   // const address = '0xc4bbfad25740517144361a4215054ecd8b70c148'
   // User info
@@ -322,7 +326,7 @@ function TeamView() {
                       ${teamLoading ? "..." : formatWei(teamInfo?.user?.direct_performance || 0)}
                     </p>
                     <p className="text-[#0bda6f] text-lg font-medium flex items-center">
-                      USD1
+                      USDT
                     </p>
                   </div>
                 </div>
@@ -336,7 +340,7 @@ function TeamView() {
                       ${todayStakeLoading ? "..." : formatWei(todayStake?.today_team_stake || 0)}
                     </p>
                     <p className="text-[#0bda6f] text-lg font-medium flex items-center">
-                      USD1
+                      USDT
                     </p>
                   </div>
                 </div>
@@ -371,7 +375,7 @@ function TeamView() {
                       ${formatWei(userInfo?.personal_performance || "0", 0)}
                     </p>
                     <p className="text-[#0bda6f] text-lg font-medium flex items-center">
-                      USD1
+                      USDT
                     </p>
                   </div>
                 </div>
@@ -386,7 +390,7 @@ function TeamView() {
                       {performanceLoading ? "..." : performance?.small_area_performance ? `$${formatWei(performance.small_area_performance, 0)}` : "0"}
                     </p>
                     <p className="text-purple-400 text-lg font-medium flex items-center">
-                      USD1
+                      USDT
                     </p>
                   </div>
                 </div>
@@ -400,7 +404,7 @@ function TeamView() {
                       {performanceLoading ? "..." : performance?.team_performance ? `$${formatWei(performance.team_performance, 0)}` : "0"}
                     </p>
                     <p className="text-blue-400 text-lg font-medium flex items-center">
-                      USD1
+                      USDT
                     </p>
                   </div>
                 </div>
