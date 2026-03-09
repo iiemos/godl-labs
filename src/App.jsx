@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react'
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import {  useAccount, WagmiProvider, createConfig, http } from 'wagmi'
 import { mainnet } from 'wagmi/chains'
 import { injected } from 'wagmi/connectors'
@@ -220,6 +220,7 @@ function AppContent() {
                 <Route path="/" element={<HomeView />} />
                 <Route path="/stake" element={<StakeView />} />
                 <Route path="/mint" element={<MintView />} />
+                <Route path="/fuel-exchange" element={<Navigate to="/swap?tab=godl" replace />} />
                 <Route path="/swap" element={<SwapView />} />
                 <Route path="/team" element={<TeamView />} />
                 <Route path="/mine" element={<MineView />} />

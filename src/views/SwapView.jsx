@@ -11,6 +11,8 @@ import { useTranslation } from 'react-i18next'
 import { useWalletVerification } from '../App.jsx'
 import { MOCK_ADDRESS, USE_STATIC_DATA } from '../config/mock.js'
 import { staticSwapData } from '../mocks/staticData.js'
+import { useSearchParams } from 'react-router-dom'
+import FuelExchangeView from './FuelExchangeView.jsx'
 
 // Addresses
 const USD1SWAP_ROUTER_ADDRESS = '0xfdc450300611776F640Cd5e879D678Acd455087c'
@@ -23,6 +25,7 @@ const TRADING_ADDRESS = '0x2746B0eA4C4F8da24B1d9F174de935b5C4F4449D'
 const MaxUint256 = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')
 
 function SwapView() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const { address: walletAddress, isConnected: walletConnected } = useAccount()
   const address = USE_STATIC_DATA ? MOCK_ADDRESS : walletAddress
   const isConnected = USE_STATIC_DATA ? true : walletConnected
@@ -35,9 +38,9 @@ function SwapView() {
 
   // UI state
   const [fromToken, setFromToken] = useState('USDT')
-  const [toToken, setToToken] = useState('MOON')
+  const [toToken, setToToken] = useState('USGD')
   const [fromAmount, setFromAmount] = useState('')
-  const [slippage, setSlippage] = useState(20)
+  const [slippage, setSlippage] = useState(1)
   const [customSlippage, setCustomSlippage] = useState('')
   const [showCustomSlippage, setShowCustomSlippage] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -47,7 +50,7 @@ function SwapView() {
   const [usd1ToMgnRate, setUsd1ToMgnRate] = useState('0.0000')
   const [mgnToUsd1Rate, setMgnToUsd1Rate] = useState('0.0000')
   const [localUsdtBalance, setLocalUsdtBalance] = useState(staticSwapData.usdtBalance)
-  const [localMgnBalance, setLocalMgnBalance] = useState(staticSwapData.mgnBalance)
+  const [localMgnBalance, setLocalMgnBalance] = useState(staticSwapData.usgdBalance || staticSwapData.mgnBalance)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   
   // User info for purchase limits
@@ -58,6 +61,7 @@ function SwapView() {
   const [transactionHash, setTransactionHash] = useState('')
   const [notifications, setNotifications] = useState([]) // 通知数组
   const [showRetry, setShowRetry] = useState(false)
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'godl' ? 'godl' : 'stable')
   
   // Notification helper functions
   const showNotification = (message, type = 'info') => {
@@ -88,7 +92,7 @@ function SwapView() {
   const settingsPopupRef = useRef(null)
   const settingsButtonRef = useRef(null)
 
-  // Token allowances (for USDT and MOON)
+  // Token allowances (for USDT and USGD)
   // USDT授权到TRADING_ADDRESS (用于buy)
   const { data: usdtAllowanceForTrading, refetch: refetchUsdtAllowanceForTrading } = useReadContract({
     address: USDT_ADDRESS,
@@ -105,7 +109,7 @@ function SwapView() {
     args: [address ?? '0x0', USD1SWAP_ROUTER_ADDRESS],
     enabled: !!address && isVerified && !USE_STATIC_DATA
   })
-  // MOON授权到Router (用于sell/swap)
+  // USGD授权到Router (用于sell/swap)
   const { data: mgnAllowance, refetch: refetchMgnAllowance } = useReadContract({
     address: MGN_ADDRESS,
     abi: ERC20_ABI,
@@ -183,8 +187,8 @@ function SwapView() {
   // Track rates from router
   useEffect(() => {
     if (USE_STATIC_DATA) {
-      setUsd1ToMgnRate(staticSwapData.usd1ToMgnRate)
-      setMgnToUsd1Rate(staticSwapData.mgnToUsd1Rate)
+      setUsd1ToMgnRate(staticSwapData.usdtToUsgdRate || staticSwapData.usd1ToMgnRate)
+      setMgnToUsd1Rate(staticSwapData.usgdToUsdtRate || staticSwapData.mgnToUsd1Rate)
       setUserInfo(staticSwapData.userInfo)
       setIsContractPaused(false)
       return
@@ -316,7 +320,7 @@ function SwapView() {
       }
       // Simulate rate update
       const delta = (Math.random() * 0.02) - 0.01
-      const newRate = Math.max(0.01, (usd1ToMgnRate ? parseFloat(usd1ToMgnRate) : 0.4528) * (1 + delta))
+      const newRate = Math.max(0.01, (usd1ToMgnRate ? parseFloat(usd1ToMgnRate) : 1) * (1 + delta))
       setUsd1ToMgnRate(newRate.toFixed(6))
       setMgnToUsd1Rate((1 / newRate).toFixed(6))
       showNotification(t('success.dataRefreshed'), 'success')
@@ -330,8 +334,8 @@ function SwapView() {
 
   // Derived rate for current direction
   const computedRate = useMemo(() => {
-    if (fromToken === 'USDT' && toToken === 'MOON') return parseFloat(usd1ToMgnRate || '0')
-    if (fromToken === 'MOON' && toToken === 'USDT') return parseFloat(mgnToUsd1Rate || '0')
+    if (fromToken === 'USDT' && toToken === 'USGD') return parseFloat(usd1ToMgnRate || '0')
+    if (fromToken === 'USGD' && toToken === 'USDT') return parseFloat(mgnToUsd1Rate || '0')
     return 0
   }, [fromToken, toToken, usd1ToMgnRate, mgnToUsd1Rate])
   
@@ -340,7 +344,7 @@ function SwapView() {
     if (fromToken === 'USDT') {
       if (USE_STATIC_DATA) return parseFloat(localUsdtBalance || '0')
       return usdtBalance ? parseFloat(formatUnits(usdtBalance, 18)) : 0
-    } else if (fromToken === 'MOON') {
+    } else if (fromToken === 'USGD') {
       if (USE_STATIC_DATA) return parseFloat(localMgnBalance || '0')
       return mgnBalance ? parseFloat(formatUnits(mgnBalance, 18)) : 0
     }
@@ -351,7 +355,7 @@ function SwapView() {
     if (toToken === 'USDT') {
       if (USE_STATIC_DATA) return parseFloat(localUsdtBalance || '0')
       return usdtBalance ? parseFloat(formatUnits(usdtBalance, 18)) : 0
-    } else if (toToken === 'MOON') {
+    } else if (toToken === 'USGD') {
       if (USE_STATIC_DATA) return parseFloat(localMgnBalance || '0')
       return mgnBalance ? parseFloat(formatUnits(mgnBalance, 18)) : 0
     }
@@ -510,8 +514,8 @@ function SwapView() {
       return
     }
     
-    // Purchase limit check for USDT -> MOON
-    if (fromToken === 'USDT' && toToken === 'MOON' && userInfo) {
+    // Purchase limit check for USDT -> USGD
+    if (fromToken === 'USDT' && toToken === 'USGD' && userInfo) {
       const remainingLimit = parseFloat(userInfo.remaining)
       if (amount > remainingLimit) {
         showNotification(`${t('error.exceedLimit')} ${userInfo.remaining} ${fromToken}`, 'error')
@@ -526,7 +530,7 @@ function SwapView() {
       const inVal = parseFloat(fromAmount || '0')
       const outVal = parseFloat(toAmount || '0')
 
-      if (fromToken === 'USDT' && toToken === 'MOON') {
+      if (fromToken === 'USDT' && toToken === 'USGD') {
         setLocalUsdtBalance((prev) => Math.max(0, parseFloat(prev || '0') - inVal).toFixed(6))
         setLocalMgnBalance((prev) => (parseFloat(prev || '0') + outVal).toFixed(6))
         setUserInfo((prev) => {
@@ -540,7 +544,7 @@ function SwapView() {
             hasQuota: remaining > 0
           }
         })
-      } else if (fromToken === 'MOON' && toToken === 'USDT') {
+      } else if (fromToken === 'USGD' && toToken === 'USDT') {
         setLocalMgnBalance((prev) => Math.max(0, parseFloat(prev || '0') - inVal).toFixed(6))
         setLocalUsdtBalance((prev) => (parseFloat(prev || '0') + outVal).toFixed(6))
       }
@@ -568,8 +572,8 @@ function SwapView() {
       }
       setIsLiquidityInsufficient(false)
       
-      if (fromToken === 'USDT' && toToken === 'MOON') {
-        // USDT->MOON: 使用TRADING_ADDRESS合约的buy方法
+      if (fromToken === 'USDT' && toToken === 'USGD') {
+        // USDT->USGD: 使用TRADING_ADDRESS合约的buy方法
         // 确保USDT授权到TRADING_ADDRESS
         const allowance = BigInt(usdtAllowanceForTrading ?? '0')
         if (!usdtAllowanceForTrading || allowance < amountInWei) {
@@ -616,12 +620,12 @@ function SwapView() {
         setTransactionStatus('pending')
         showNotification(`${t('info.pending')} Hash: ${tx.slice(0, 10)}...`, 'info')
         
-      } else if (fromToken === 'MOON' && toToken === 'USDT') {
-        // Ensure MOON allowance with proper status updates
+      } else if (fromToken === 'USGD' && toToken === 'USDT') {
+        // Ensure USGD allowance with proper status updates
         const allowance = BigInt(mgnAllowance ?? '0')
         if (!mgnAllowance || allowance < amountInWei) {
           setTransactionStatus('approving')
-          showNotification(`${t('info.approving')} MOON...`, 'info')
+          showNotification(`${t('info.approving')} USGD...`, 'info')
           
           try {
             const approveTx = await writeContractAsync({
@@ -690,10 +694,25 @@ function SwapView() {
 
   // 路由提要文本
   const exchangeRateText = useMemo(() => {
-    if (fromToken === 'USDT' && toToken === 'MOON') return `1 USDT ≈ ${usd1ToMgnRate} ${toToken}`
-    if (fromToken === 'MOON' && toToken === 'USDT') return `1 MOON ≈ ${mgnToUsd1Rate} USDT`
+    if (fromToken === 'USDT' && toToken === 'USGD') return `1 USDT ≈ ${usd1ToMgnRate} ${toToken}`
+    if (fromToken === 'USGD' && toToken === 'USDT') return `1 USGD ≈ ${mgnToUsd1Rate} USDT`
     return `1 ${fromToken} ≈ 0 ${toToken}`
   }, [fromToken, toToken, usd1ToMgnRate, mgnToUsd1Rate])
+
+  useEffect(() => {
+    const tab = searchParams.get('tab') === 'godl' ? 'godl' : 'stable'
+    setActiveTab(tab)
+  }, [searchParams])
+
+  function handleTabChange(tab) {
+    setActiveTab(tab)
+    setIsSettingsOpen(false)
+    if (tab === 'godl') {
+      setSearchParams({ tab: 'godl' })
+      return
+    }
+    setSearchParams({})
+  }
 
   // UI
   return (
@@ -704,6 +723,31 @@ function SwapView() {
               {/* 通知系统 */}
               <Notification notifications={notifications} onClose={clearNotification} />
               <main className="flex-1 flex flex-col items-center justify-center px-4 ">
+                <div className="w-full max-w-[720px] mb-6 flex justify-center">
+                  <div className="inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
+                    <button
+                      type="button"
+                      onClick={() => handleTabChange('stable')}
+                      className={`px-5 py-2 rounded-lg text-sm font-bold transition-colors ${
+                        activeTab === 'stable' ? 'bg-primary text-white' : 'text-[#a692c8] hover:text-white'
+                      }`}
+                    >
+                      稳定币兑换
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTabChange('godl')}
+                      className={`px-5 py-2 rounded-lg text-sm font-bold transition-colors ${
+                        activeTab === 'godl' ? 'bg-primary text-white' : 'text-[#a692c8] hover:text-white'
+                      }`}
+                    >
+                      USGD / GODL兑换
+                    </button>
+                  </div>
+                </div>
+
+                {activeTab === 'stable' ? (
+                  <>
               <div className="mb-8 text-center">
                 <h1 className="text-4xl font-bold tracking-tight mb-2">{t('swap.title')}</h1>
                 <p className="text-white/50 text-sm">{t('swap.subtitle')}</p>
@@ -823,7 +867,7 @@ function SwapView() {
                       <button className="bg-primary/20 hover:bg-primary/40 text-primary text-[10px] font-bold px-2 py-1 rounded-md transition-all" onClick={setMaxAmount}>MAX</button>
                       <div className="flex items-center gap-2 bg-background-dark border border-white/10 px-3 py-2 rounded-xl cursor-pointer hover:bg-white/5 transition-all">
                         <div className={`size-6 ${fromToken === 'USDT' ? 'bg-green-500/20' : 'bg-primary/20'} rounded-full flex items-center justify-center`}>
-                          <img src={fromToken === 'USDT' ? '/img/usdt.png' : '/img/coin.png'} alt={fromToken} className="size-6" />
+                          <img src={fromToken === 'USDT' ? '/img/usdt.png' : '/img/usd.png'} alt={fromToken} className="size-6" />
                         </div>
                         <span className="font-bold text-lg">{fromToken}</span>
                         <Icon icon="mdi:chevron-down" className="text-lg text-white/40" />
@@ -846,7 +890,7 @@ function SwapView() {
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-2 bg-background-dark border border-white/10 px-3 py-2 rounded-xl cursor-pointer hover:bg-white/5 transition-all">
                         <div className={`size-6 ${toToken === 'USDT' ? 'bg-green-500/20' : 'bg-primary/20'} rounded-full flex items-center justify-center`}>
-                          <img src={toToken === 'USDT' ? '/img/usdt.png' : '/img/coin.png'} alt={toToken} className="size-6" />
+                          <img src={toToken === 'USDT' ? '/img/usdt.png' : '/img/usd.png'} alt={toToken} className="size-6" />
                         </div>
                         <span className="font-bold text-lg">{toToken}</span>
                         <Icon icon="mdi:chevron-down" className="text-lg text-white/40" />
@@ -873,7 +917,7 @@ function SwapView() {
                   </div>
                   
                   {/* 购买限制信息 */}
-                  {fromToken === 'USDT' && toToken === 'MOON' && userInfo && (
+                  {fromToken === 'USDT' && toToken === 'USGD' && userInfo && (
                     <div className="buy-limit-info mt-4 pt-4 border-t border-primary/10">
                       <div className="flex justify-between text-lg mb-2">
                         <span className="text-white/40">{t('swap.purchaseLimit')}</span>
@@ -954,6 +998,12 @@ function SwapView() {
                   <span className="text-xs">{t('swap.crossChain')}</span>
                 </div>
               </div>
+                  </>
+                ) : (
+                  <div className="w-full max-w-[1440px]">
+                    <FuelExchangeView embedded />
+                  </div>
+                )}
             </main>
           </div>
         </div>

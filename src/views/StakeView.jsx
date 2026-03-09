@@ -90,8 +90,15 @@ function StakeView() {
   const [ticketQuantity, setTicketQuantity] = useState(getDefaultTicketQuantity);
 
   const numericStakeAmount = Number(stakeAmount) || 0;
-  const insuranceAmount = numericStakeAmount * 0.1;
-  const totalPaymentAmount = numericStakeAmount + insuranceAmount;
+  const selectedLockOption = lockOptions[selectedStakeIndex] || lockOptions[0];
+  const subscriptionFeeRate = ((selectedLockOption?.months || 0) / 12) * 0.02;
+  const subscriptionFee = numericStakeAmount * subscriptionFeeRate;
+  const totalPaymentAmount = numericStakeAmount + subscriptionFee;
+  const expectedInterest = numericStakeAmount * ((selectedLockOption?.rate || 0) / 100) * ((selectedLockOption?.days || 0) / 365);
+  const gdlBonusEstimate = expectedInterest * (selectedLockOption?.gdlMultiplier || 0);
+  const releaseIntervals = Math.max(1, (selectedLockOption?.days || 1) * 24 * 60 * 20);
+  const per3sInterest = expectedInterest / releaseIntervals;
+  const per3sGdlEquivalent = gdlBonusEstimate / releaseIntervals;
 
   const formatAmount = (value) => {
     if (!Number.isFinite(value)) return '0';
@@ -286,12 +293,12 @@ function StakeView() {
               
               <div className="lg:flex lg:flex-wrap grid grid-cols-2 gap-6 gap-3 lg:gap-4 -mx-6 px-6 lg:mx-0 lg:px-0">
                 <div className="flex flex-col items-center shrink-0 bg-[#1c152a] px-5 py-3 rounded-xl border border-[#312447] min-w-[140px]">
-                  <p className="text-[#a692c8] text-[10px] font-bold">USDT BALANCE</p>
+                  <p className="text-[#a692c8] text-[10px] font-bold">USGD BALANCE</p>
                   <p className="text-white font-black text-3xl">${parseFloat(usdtBalance).toLocaleString()}</p>
                 </div>
                 
                 <div className="flex flex-col items-center shrink-0 bg-primary/10 px-5 py-3 rounded-xl border border-primary/30 min-w-[140px]">
-                  <p className="text-primary text-[10px] font-bold">AIG BALANCE</p>
+                  <p className="text-primary text-[10px] font-bold">GDL BALANCE</p>
                   <p className="text-white font-black text-3xl">{parseFloat(aigBalance).toLocaleString()}</p>
                 </div>
               
@@ -307,12 +314,12 @@ function StakeView() {
             </div>
           </div>
           
-          {/* Ticket Selection */}
+          {/* Plan Selection */}
           <div className="glass-card rounded-2xl p-6 border-[#312447] mb-8">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <Icon icon="mdi:clock-outline" className="text-primary" />
-                门票选择
+                认购计划选择
               </h3>
               <button className="text-primary hover:text-primary/80 transition-colors">
                 <Icon icon="mdi:information-outline" className="text-2xl" />
@@ -336,16 +343,16 @@ function StakeView() {
                       <p className="text-[#a692c8] text-sm">{ticket.desc}</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-[#a692c8] text-lg font-bold hidden md:block">售价</p>
-                      <p className="text-3xl font-black text-[#0bda6f] tabular-nums">{ticket.price} USDT</p>
+                      <p className="text-[#a692c8] text-lg font-bold hidden md:block">认购单价</p>
+                      <p className="text-3xl font-black text-[#0bda6f] tabular-nums">{ticket.price} USGD</p>
                     </div>
                   </div>
                   
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
-                      <span className="text-[#a692c8]">对应活动周期</span>
+                      <span className="text-[#a692c8]">认购周期</span>
                       <span className="text-white font-bold">
-                        {ticket.stakeIndex === 0 ? '1天' : '30天'}
+                        {(lockOptions.find((item) => item.index === ticket.stakeIndex)?.months || 0)}个月
                       </span>
                     </div>
                   </div>
@@ -365,22 +372,22 @@ function StakeView() {
               <div className="space-y-6">
                 <div>
                   <label className="text-[#a692c8] text-[10px] lg:text-lg font-bold uppercase mb-2 block">
-                    门票售价
+                    认购金额
                   </label>
                   <div className={`w-full bg-[#110d1a] border rounded-xl py-4 lg:py-5 px-4 ${stakeAmountError ? 'border-red-500' : 'border-[#312447]'}`}>
                     <div className="flex items-center justify-between gap-4">
                       <div>
-                        <p className="text-[#a692c8] text-xs">已选门票</p>
+                        <p className="text-[#a692c8] text-xs">已选计划</p>
                         <p className="text-white font-bold text-lg">{selectedTicket.name}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[#a692c8] text-xs">售价</p>
-                        <p className="text-primary font-black text-2xl">{selectedTicket.price} USDT</p>
+                        <p className="text-[#a692c8] text-xs">单份金额</p>
+                        <p className="text-primary font-black text-2xl">{selectedTicket.price} USGD</p>
                       </div>
                     </div>
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-3">
-                    <p className="text-[#a692c8] text-sm">门票数量</p>
+                    <p className="text-[#a692c8] text-sm">认购份数</p>
                     <div className="flex items-center bg-[#110d1a] border border-[#312447] rounded-lg overflow-hidden">
                       <button
                         type="button"
@@ -415,33 +422,39 @@ function StakeView() {
                     <span className="text-[#a692c8] uppercase">{t('stake.stakeAmount')}</span>
                     <span className="text-primary">{stakeAmount}</span>
                   </div>
-                  <p className="text-[#a692c8] text-sm">门票总额会按所选门票与数量自动计算。</p>
+                  <p className="text-[#a692c8] text-sm">认购总额将按计划单价与份数自动计算。</p>
                 </div>
                 
                 <div className="p-4 bg-background-dark/50 rounded-xl border border-[#312447] text-md">
-                  {selectedStakeIndex === 1 && (
-                    <div className="flex justify-between mb-2">
-                      <span className="text-[#a692c8]">{t('stake.paymentAmount')}</span>
-                      <span className="text-white font-bold">
-                        {formatAmount(numericStakeAmount)} + {formatAmount(insuranceAmount)} = {formatAmount(totalPaymentAmount)} USDT
-                      </span>
-                    </div>
-                  )}
                   <div className="flex justify-between mb-2">
-                    <span className="text-[#a692c8]">{t('stake.dailyRewards')}</span>
+                    <span className="text-[#a692c8]">认购手续费</span>
                     <span className="text-white font-bold">
-                      + {(stakeAmount * (lockOptions[selectedStakeIndex].rate / 100) / lockOptions[selectedStakeIndex].days).toFixed(2)} USDT
+                      {formatAmount(subscriptionFee)} USGD ({(subscriptionFeeRate * 100).toFixed(2)}%)
                     </span>
+                  </div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-[#a692c8]">{t('stake.paymentAmount')}</span>
+                    <span className="text-white font-bold">
+                      {formatAmount(numericStakeAmount)} + {formatAmount(subscriptionFee)} = {formatAmount(totalPaymentAmount)} USGD
+                    </span>
+                  </div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-[#a692c8]">预计利息</span>
+                    <span className="text-[#0bda6f] font-bold">
+                      {formatAmount(expectedInterest)} USGD
+                    </span>
+                  </div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-[#a692c8]">预计 GDL 激励</span>
+                    <span className="text-white font-bold">{formatAmount(gdlBonusEstimate)} GDL 等值</span>
+                  </div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-[#a692c8]">每3秒释放</span>
+                    <span className="text-white font-bold">{per3sInterest.toFixed(6)} USGD + {per3sGdlEquivalent.toFixed(6)} GDL</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#a692c8]">{t('stake.lockupPeriod')}</span>
-                    <span className="text-white font-bold">{lockOptions[selectedStakeIndex].days} Days</span>
-                  </div>
-                  <div className="flex justify-between mt-2">
-                    <span className="text-[#a692c8]">{t('stake.estTotalReturn')}</span>
-                    <span className="text-[#0bda6f] font-bold">
-                      ${(stakeAmount * (1 + lockOptions[selectedStakeIndex].rate / 100)).toFixed(2)}
-                    </span>
+                    <span className="text-white font-bold">{selectedLockOption.months} 个月 ({selectedLockOption.rate}% APY)</span>
                   </div>
                 </div>
                 
@@ -539,7 +552,7 @@ function StakeView() {
                           <td className="px-6 py-5">
                             <span className="text-sm">{formatTimestamp(record.oriStakeTime)}</span>
                           </td>
-                          <td className="px-6 py-5 font-bold text-sm">${record.amount}</td>
+                          <td className="px-6 py-5 font-bold text-sm">{record.amount} USGD</td>
                           <td className="px-6 py-5">
                             <div>
                               <span className="text-sm font-bold">({transformDay(record.stakeIndex)})</span>
@@ -552,7 +565,7 @@ function StakeView() {
                           </td>
                           <td className="px-6 py-5">
                             <span className="text-[#0bda6f] font-bold text-sm">
-                              ${calculateReward(record)}
+                              {calculateReward(record)} USGD
                             </span>
                           </td>
                           <td className="px-6 py-5 text-right">
@@ -594,11 +607,11 @@ function StakeView() {
                     <div key={index} className="p-4 flex flex-col gap-4">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="text-xl font-bold">${record.amount}</p>
+                          <p className="text-xl font-bold">{record.amount} USGD</p>
                           <p className="text-[10px] text-[#a692c8]">{formatTimestamp(record.oriStakeTime)}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[#0bda6f] text-2xl font-bold">${calculateReward(record)}</p>
+                          <p className="text-[#0bda6f] text-2xl font-bold">{calculateReward(record)} USGD</p>
                           <p className="text-[10px] text-[#a692c8]">({transformDay(record.stakeIndex)})</p>
                         </div>
                       </div>
@@ -642,7 +655,7 @@ function StakeView() {
               </div>
               <div className="flex flex-col gap-1 lg:gap-2">
                 <p className="text-[#a692c8] text-[10px] lg:text-lg font-bold uppercase">{t('common.annualYield360Days')}</p>
-                <p className="text-lg lg:text-2xl font-black text-white">10351.93%</p>
+                <p className="text-lg lg:text-2xl font-black text-white">30%</p>
                 <p className="text-blue-400 text-[10px] font-medium">{t('stake.optimalNetwork')}</p>
               </div>
             </div>

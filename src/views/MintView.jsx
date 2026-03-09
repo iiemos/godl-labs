@@ -6,7 +6,7 @@ import useStakeStore from '../stores/stakeStore';
 import { useWalletIntegration } from '../hooks/useWalletIntegration';
 import { useNotification, useWalletVerification } from '../App.jsx';
 import { MOCK_ADDRESS, USE_STATIC_DATA } from '../config/mock.js';
-import { DEFAULT_MINT_AMOUNT, MINT_FUEL_FEE_RLF, TICKET_OPTIONS } from '../config/ticketing.js';
+import { DEFAULT_MINT_AMOUNT, MINT_FUEL_FEE_GDL, TICKET_OPTIONS } from '../config/ticketing.js';
 
 function MintView() {
   useWalletIntegration();
@@ -80,56 +80,60 @@ function MintView() {
     }
 
     if (selectedTicketHoldingCount < 1) {
-      addNotification('error', '当前门票不足，无法铸造');
+      addNotification('error', '当前治理份额不足，无法提交');
       return;
     }
 
     if (todayRemainingMintCount < 1) {
-      addNotification('error', '今日铸造次数已用完');
+      addNotification('error', '今日治理次数已用完');
       return;
     }
 
     if (mintAmount < 1) {
-      addNotification('error', '请输入有效的铸造金额');
+      addNotification('error', '请输入有效的治理质押金额');
       return;
     }
 
     if (Number(usdtBalance || 0) < mintAmount) {
-      addNotification('error', 'USDT 余额不足');
+      addNotification('error', 'GDL 余额不足');
       return;
     }
 
     const consumed = consumeTicketHoldings(selectedTicketIndex, 1);
     if (!consumed) {
-      addNotification('error', '门票扣减失败，请刷新后重试');
+      addNotification('error', '治理份额扣减失败，请刷新后重试');
       return;
     }
 
     increaseMintCount(1);
-    addNotification('success', `铸造已提交：${selectedTicket.name} 1张`);
+    addNotification('success', `治理质押已提交：${selectedTicket.name} 1份`);
   };
 
   return (
     <div className="dark:bg-background-dark font-display text-white min-h-screen">
-      <div className="flex flex-col lg:flex-row">
+      {/* 背景/网格保持原样 */}
+      <div className="fixed inset-0 z-0 bg-grid opacity-50 pointer-events-none"></div>
+      <div className="fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_50%,rgba(124,59,237,0.1)_0%,transparent_50%)] pointer-events-none"></div>
+
+      <div className="relative z-10 flex flex-col lg:flex-row">
         <main className="max-w-[1440px] mx-auto w-full px-4 md:px-10 py-10 pt-18">
           <div className="mb-6">
-            <h3 className="text-white text-4xl font-black leading-tight tracking-[-0.033em]">铸造中心</h3>
-            <p className="text-[#a692c8] text-sm">使用已购买门票进行铸造，查看次数与燃料需求。</p>
+            <h3 className="text-white text-4xl font-black leading-tight tracking-[-0.033em]">治理中心</h3>
+            <p className="text-[#a692c8] text-sm">基于持仓份额参与治理质押，查看今日可参与次数与累计记录。</p>
           </div>
 
           <div className="glass-panel neon-border-purple rounded-2xl px-6 lg:px-10 py-4 border-b border-[#312447] bg-background-dark/50 backdrop-blur-md mb-8">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div className="flex flex-col">
-                <h2 className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-primary/60 bg-clip-text text-transparent">我的门票</h2>
+                <h2 className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-primary/60 bg-clip-text text-transparent">我的治理份额</h2>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex flex-col items-center shrink-0 bg-primary/10 px-5 py-3 rounded-xl border border-primary/30 min-w-[140px]">
-                  <p className="text-primary text-[10px] font-bold">可铸造总次数</p>
+                  <p className="text-primary text-[10px] font-bold">可参与治理次数</p>
                   <p className="text-white font-black text-3xl">{totalMintableCount}</p>
                 </div>
                 <div className="flex flex-col items-center shrink-0 bg-[#1c152a] px-5 py-3 rounded-xl border border-[#312447] min-w-[140px]">
-                  <p className="text-[#a692c8] text-[10px] font-bold">今日剩余次数</p>
+                  <p className="text-[#a692c8] text-[10px] font-bold">今日剩余治理次数</p>
                   <p className="text-white font-black text-3xl">{todayRemainingMintCount}</p>
                 </div>
               </div>
@@ -141,7 +145,7 @@ function MintView() {
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold flex items-center gap-2">
                   <Icon icon="mdi:ticket-outline" className="text-primary" />
-                  选择铸造门票
+                  选择治理计划
                 </h3>
               </div>
               <div className="flex flex-col gap-4">
@@ -173,17 +177,17 @@ function MintView() {
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
                 <h3 className="text-xl font-bold flex items-center gap-2">
                   <Icon icon="mdi:anvil" className="text-primary" />
-                  铸造模块
+                  GDL治理质押模块
                 </h3>
                 <p className="text-[#a692c8] text-sm">
-                  当前铸造门票：{selectedTicket.name}（剩余 {selectedTicketHoldingCount} 张）
+                  当前治理计划：{selectedTicket.name}（剩余 {selectedTicketHoldingCount} 张）
                 </p>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="bg-[#110d1a] border border-[#312447] rounded-xl p-4">
-                    <p className="text-[#a692c8] text-xs uppercase mb-3">铸造 - 我的门票列表</p>
+                    <p className="text-[#a692c8] text-xs uppercase mb-3">治理计划 - 我的份额列表</p>
                     <div className="space-y-2">
                       {TICKET_OPTIONS.map((ticket, index) => (
                         <div key={ticket.name} className="flex items-center justify-between text-sm">
@@ -195,17 +199,17 @@ function MintView() {
                   </div>
 
                   <div className="bg-[#110d1a] border border-[#312447] rounded-xl p-4">
-                    <p className="text-[#a692c8] text-xs uppercase mb-3">铸造次数提示</p>
+                    <p className="text-[#a692c8] text-xs uppercase mb-3">治理次数提示</p>
                     <div className="flex items-center justify-between text-sm mb-2">
-                      <span className="text-[#a692c8]">可铸造总次数</span>
+                      <span className="text-[#a692c8]">可参与治理次数</span>
                       <span className="text-white font-bold">{totalMintableCount} 次</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-[#a692c8]">今日剩余次数</span>
+                      <span className="text-[#a692c8]">今日剩余治理次数</span>
                       <span className="text-white font-bold">{todayRemainingMintCount} / {dailyMintLimit} 次</span>
                     </div>
                     <div className="flex items-center justify-between text-sm mt-2">
-                      <span className="text-[#a692c8]">累计已铸造</span>
+                      <span className="text-[#a692c8]">累计已治理质押</span>
                       <span className="text-white font-bold">{mintedTotalCount} 次</span>
                     </div>
                   </div>
@@ -213,7 +217,7 @@ function MintView() {
 
                 <div className="space-y-4">
                   <div className="bg-[#110d1a] border border-[#312447] rounded-xl p-4">
-                    <p className="text-[#a692c8] text-xs uppercase mb-3">铸造金额输入</p>
+                    <p className="text-[#a692c8] text-xs uppercase mb-3">治理质押金额</p>
                     <div className="flex items-center justify-between gap-3">
                       <input
                         type="number"
@@ -223,22 +227,22 @@ function MintView() {
                         onChange={(e) => normalizeMintAmount(e.target.value)}
                         className="w-full bg-background-dark/50 border border-[#312447] rounded-lg px-3 py-2 text-white font-bold outline-none focus:border-primary"
                       />
-                      <span className="text-white font-bold whitespace-nowrap">USDT</span>
+                      <span className="text-white font-bold whitespace-nowrap">GDL</span>
                     </div>
-                    <p className="text-[#a692c8] text-sm mt-2">余额：{parseFloat(usdtBalance || 0).toLocaleString()} USDT</p>
+                    <p className="text-[#a692c8] text-sm mt-2">余额：{parseFloat(usdtBalance || 0).toLocaleString()} GDL</p>
                   </div>
 
                   <div className="bg-[#110d1a] border border-[#312447] rounded-xl p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-[#a692c8] text-xs uppercase">燃料费显示</p>
-                        <p className="text-white font-bold mt-1">{MINT_FUEL_FEE_RLF} RLF</p>
+                        <p className="text-[#a692c8] text-xs uppercase">治理手续费</p>
+                        <p className="text-white font-bold mt-1">{MINT_FUEL_FEE_GDL} GDL</p>
                       </div>
                       <Link
-                        to="/swap"
+                        to="/swap?tab=godl"
                         className="inline-flex items-center justify-center px-3 py-2 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors text-sm font-bold"
                       >
-                        去兑换
+                        去 Swap
                       </Link>
                     </div>
                   </div>
@@ -253,7 +257,7 @@ function MintView() {
                         : 'bg-primary text-white glow-primary hover:opacity-90'
                     }`}
                   >
-                    立即铸造
+                    提交治理质押
                   </button>
                 </div>
               </div>

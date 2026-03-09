@@ -24,56 +24,64 @@ function HomeView() {
   const { addNotification } = useNotification()
 
   const homeCopy = {
-    heroTitle: '原点计划',
-    heroSubtitle: '从数字原点到星际文明，构建“地面 AI + 人形机器人 + 算力接入”的跨轨道价值网络。',
-    networkHint: '机器自治时代的去中心化算力协作层',
-    globalStatsTitle: '算力网络总规模',
-    userStatusTitle: '生态建设者状态',
-    tvlTitle: '算力价值总量',
-    dailyStakeTitle: '当日算力需求',
-    performanceTitle: '个人贡献值',
-    assetsTitle: '核心基座模块',
-    assetsSubtitle: '以 H200 算力中心、工业算法优化与 C2C 算力平台构建持续增长引擎。',
-    viewModules: '查看核心模块',
-    moduleOneTag: 'H200 Base',
-    moduleOneTitle: 'H200 算力中心',
-    moduleOneDesc: '以 200 万美金级 NVIDIA H200 作为物理锚点，承载深度推理与稳定现金流能力。',
-    moduleOneMetricA: '核心能力',
-    moduleOneMetricAValue: '高带宽推理',
-    moduleOneMetricB: '价值贡献',
-    moduleOneMetricBValue: '财务母体支柱',
-    moduleTwoTag: 'C2C Network',
-    moduleTwoTitle: '去中心化算力平台',
-    moduleTwoDesc: '连接全球闲置 GPU 与边缘节点，实现算力供需自动匹配，降低全社会算力成本。',
-    moduleTwoMetricA: '结算机制',
-    moduleTwoMetricAValue: 'MOON + CAMO',
-    moduleTwoMetricB: '目标形态',
-    moduleTwoMetricBValue: '全球 C2C 调度',
-    ctaTitle: '重写算力底层协议',
-    ctaSubtitle: '围绕“算力需求增长 → MOON 持续销毁 → 生态价值上升”构建长期价值飞轮。',
-    ctaButton: '进入算力生态',
-    footerBrand: '原点计划',
-    footerDesc: '星空不再是遥不可及的画布，而是可以被计算、被映射、被拥有的未来。',
-    protocolTitle: '核心架构',
-    protocolItem1: 'H200 算力中心',
-    protocolItem2: '工业算法优化',
-    protocolItem3: '去中心化算力平台',
-    protocolItem4: 'MOON 价值飞轮',
-    companyTitle: '路线图',
-    companyItem1: '2026 Q1：算力中心扩容',
-    companyItem2: '2026 Q3：工业算法落地',
-    companyItem3: '2027：C2C 平台 Beta',
-    companyItem4: '持续推进星际文明叙事',
-    newsletterTitle: '生态更新',
-    newsletterDesc: '订阅原点计划动态，获取算力网络与生态进展。',
+    heroTitle: 'GODL LABS',
+    heroSubtitle: '由稳定币 USGD、黄金锚定币 GODL 与治理代币 GDL 组成的 RWA 资产平台。',
+    networkHint: 'USGD / GODL / GDL 多资产协同网络',
+    globalStatsTitle: '全网认购规模',
+    userStatusTitle: '会员状态',
+    tvlTitle: '总锁仓量 TVL',
+    dailyStakeTitle: '当日认购额',
+    performanceTitle: '个人累计认购',
+    assetsTitle: '核心资产模型',
+    assetsSubtitle: '围绕 1:1 稳定兑换、黄金锚定兑换与治理激励构建长期价值闭环。',
+    viewModules: '查看认购模块',
+    moduleOneTag: 'USGD',
+    moduleOneTitle: '稳定币层',
+    moduleOneDesc: 'USGD 与 USDT 在流动性池保持 1:1，作为平台认购与结算基础资产。',
+    moduleOneMetricA: '锚定关系',
+    moduleOneMetricAValue: 'USGD = USDT',
+    moduleOneMetricB: '应用场景',
+    moduleOneMetricBValue: '入金与基金认购',
+    moduleTwoTag: 'GODL',
+    moduleTwoTitle: '黄金锚定层',
+    moduleTwoDesc: 'GODL 通过 PAXG 流动性价格折算，映射黄金基金份额价值。',
+    moduleTwoMetricA: '初始发行',
+    moduleTwoMetricAValue: '160,000 GODL',
+    moduleTwoMetricB: '锚定价值',
+    moduleTwoMetricBValue: '5 亿美金黄金基金',
+    ctaTitle: '进入认购',
+    ctaSubtitle: '支持 3 / 6 / 12 个月认购周期，收益线性释放，附加 GDL 激励。',
+    ctaButton: '立即认购',
+    footerBrand: 'GODL LABS',
+    footerDesc: '以链上透明机制连接稳定资产、黄金锚定资产与治理价值。',
+    protocolTitle: '协议模块',
+    protocolItem1: 'USDT ↔ USGD 兑换',
+    protocolItem2: 'USGD ↔ GODL 兑换',
+    protocolItem3: '认购',
+    protocolItem4: 'GDL 农场/流动池',
+    companyTitle: '产品路径',
+    companyItem1: '阶段一：稳定币与黄金兑换',
+    companyItem2: '阶段二：基金认购与分红',
+    companyItem3: '阶段三：双矿池挖矿',
+    companyItem4: '阶段四：治理提案与投票',
+    newsletterTitle: '项目更新',
+    newsletterDesc: '订阅 GODL LABS 动态，获取认购、挖矿与治理进展。',
   }
 
-  const marvinInviteLink = 'https://xxxxx.io/invite/ABCD1234'
+  const marvinInviteLink = 'https://godllabs.io/invite/ABCD1234'
   const marvinFeatureRows = [
-    { cmd: '创世节点', desc: '招募 1413 名全球创世节点' },
-    { cmd: '体育赛事', desc: '抢占 Web3 赛事头矿权益' },
-    { cmd: '游戏竞技', desc: 'Play-to-Earn 激励持续释放' },
-    { cmd: '协议执行', desc: '100% 自动执行与透明结算' },
+    { cmd: 'USGD', desc: '与 USDT 维持 1:1 稳定兑换' },
+    { cmd: 'GODL', desc: '通过 PAXG 价格锚定黄金价值' },
+    { cmd: '认购释放', desc: '利息每 3 秒等比例线性释放' },
+    { cmd: 'GDL 激励', desc: '按 0.8x / 1.2x / 1.6x 提供激励' },
+  ]
+
+  const partnerLogos = [
+    { name: '瓦鲁阿图', logo: '' },
+    { name: '印尼AG集团', logo: '/friends/ag.png' },
+    { name: 'BitGo', logo: '/friends/bitgo.png' },
+    { name: 'Hex Trust', logo: '/friends/hextrust.svg' },
+    { name: '币安', logo: '/friends/binance.png' },
   ]
   
   // Global staking stats
@@ -278,9 +286,9 @@ function HomeView() {
               <Icon icon={isMobileMenuOpen ? "mdi:close" : "mdi:menu"} className="text-3xl" />
           </button>
           <div className="flex items-center gap-2">
-            {/* <img src="/img/coin.png" alt="Project Origin Logo" className="size-12" /> */}
+            {/* <img src="/img/coin.png" alt="GODL LABS Logo" className="size-12" /> */}
             <h2 className="text-xl font-extrabold tracking-tight text-white">
-              Project <span className="text-[#a855f7]">Origin</span>
+              GODL <span className="text-[#a855f7]">LABS</span>
             </h2>
           </div>
           
@@ -288,11 +296,11 @@ function HomeView() {
           
           {/* Desktop navigation */}
           <nav className="hidden md:flex items-center gap-10">
-            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/">{t('common.home')}</Link>
-            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/swap">{t('common.swap')}</Link>
-            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/stake">{t('common.stake')}</Link>
-            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/team">{t('common.team')}</Link>
-            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/mine">{t('common.mine')}</Link>
+            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/">首页</Link>
+            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/swap">Swap</Link>
+            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/stake">认购</Link>
+            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/mine">农场/流动池</Link>
+            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/team">治理数据</Link>
           </nav>
           
           {/* Wallet connect */}
@@ -330,23 +338,23 @@ function HomeView() {
             <nav className="max-w-7xl mx-auto px-6 py-4 flex flex-col gap-2">
               <Link className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-2xl font-medium hover:text-primary" to="/" onClick={() => setIsMobileMenuOpen(false)}>
                 <Icon icon="mdi:home-lightning-bolt" />
-                <p className="text-xl font-medium">{t('common.home')}</p>
+                <p className="text-xl font-medium">首页</p>
               </Link>
               <Link className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-2xl font-medium hover:text-primary" to="/swap" onClick={() => setIsMobileMenuOpen(false)}>
                 <Icon icon="mdi:account-balance-wallet" />
-                <p className="text-xl font-medium">{t('common.swap')}</p>
+                <p className="text-xl font-medium">Swap</p>
               </Link>
               <Link className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-2xl font-medium hover:text-primary" to="/stake" onClick={() => setIsMobileMenuOpen(false)}>
                 <Icon icon="mdi:gavel" />
-                <p className="text-xl font-medium">{t('common.stake')}</p>
+                <p className="text-xl font-medium">认购</p>
+              </Link>
+              <Link className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-2xl font-medium hover:text-primary" to="/mine" onClick={() => setIsMobileMenuOpen(false)}>
+                <Icon icon="mdi:chart-donut" />
+                <p className="text-xl font-medium">农场/流动池</p>
               </Link>
               <Link className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-2xl font-medium hover:text-primary" to="/team" onClick={() => setIsMobileMenuOpen(false)}>
                 <Icon icon="mdi:database" />
-                <p className="text-xl font-medium">{t('common.team')}</p>
-              </Link>
-              <Link className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-2xl font-medium hover:text-primary" to="/mine" onClick={() => setIsMobileMenuOpen(false)}>
-                <Icon icon="mdi:settings" />
-                <p className="text-xl font-medium">{t('common.mine')}</p>
+                <p className="text-xl font-medium">治理数据</p>
               </Link>
             </nav>
           </div>
@@ -365,7 +373,7 @@ function HomeView() {
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-4 mb-16">
               <Link className="w-full sm:w-auto px-20 py-4 rounded-xl bg-primary text-white font-bold text-lg shadow-xl shadow-primary/40 hover:translate-y-[-4px] transition-all" to="/stake">
-                {t('common.startStaking')}
+                进入认购
               </Link>
             </div>
             {/* Hero Animation */}
@@ -377,7 +385,7 @@ function HomeView() {
                   <div className="absolute inset-16 rounded-full border-[3px] border-dashed border-primary/10 animate-rotate-slow" style={{ animationDuration: '20s' }}></div>
                   <div className="absolute inset-20 rounded-full bg-gradient-to-br from-primary to-accent-blue opacity-30 blur-3xl animate-breathing"></div>
                   <div className="relative z-10 flex items-center justify-center w-24 h-24 rounded-full bg-slate-900/80 border border-white/10 shadow-2xl">
-                    <img src="/img/coin.png" alt="Project Origin Logo" />
+                    <img src="/img/coin.png" alt="GODL LABS Logo" />
                   </div>
                   <div className="absolute top-0 left-1/2 size-2 bg-primary rounded-full blur-[1px] animate-pulse"></div>
                   <div className="absolute bottom-10 right-10 size-3 bg-accent-blue rounded-full blur-[2px] animate-pulse" style={{ animationDelay: '1s' }}></div>
@@ -403,7 +411,7 @@ function HomeView() {
                 <span className="font-bold">{homeCopy.globalStatsTitle}</span>
               </div>
               <div className="text-sm text-white/70">
-                {globalStats.loading ? t('common.loading') : `${t('common.total')}: ${formatWei(globalStats.currentStake)} USDT`}
+                {globalStats.loading ? t('common.loading') : `${t('common.total')}: ${formatWei(globalStats.currentStake)} USGD`}
               </div>
             </div>
             <div className="glass-panel p-6 rounded-xl border border-white/5 flex items-center justify-between">
@@ -443,7 +451,7 @@ function HomeView() {
                 {dateStats.loading ? '...' : `$${formatWei(dateStats.total_stake, 0)}`}
               </p>
               <div className="flex items-center gap-2 text-slate-500 text-sm">
-                当日算力需求快照 ({selectedDate})
+                当日认购快照 ({selectedDate})
                 {/* <div className="flex items-center gap-4">
                   <input
                     type="date"
@@ -542,7 +550,7 @@ function HomeView() {
               <Icon icon="mdi:sparkles" className="text-lg" />
             </div>
             <h2 className="text-4xl sm:text-5xl font-bold text-white mb-4">邀请好友</h2>
-            <p className="text-lg text-slate-400 mb-6">Project Origin：共筑 Web3 确权价值生态</p>
+            <p className="text-lg text-slate-400 mb-6">GODL LABS：共建黄金 RWA 价值网络</p>
             <div className="max-w-3xl mx-auto flex flex-col sm:flex-row gap-4 justify-center">
               <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 h-12 px-4 flex-1">
                 <span className="flex-1 min-w-0 text-sm text-primary font-mono truncate">{marvinInviteLink}</span>
@@ -563,9 +571,9 @@ function HomeView() {
             <div className="relative grid lg:grid-cols-2 gap-10 items-center">
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-3xl font-bold text-white mb-4">Project Origin：共筑 Web3 确权价值生态</h3>
+                  <h3 className="text-3xl font-bold text-white mb-4">GODL LABS：黄金锚定与稳定币协同</h3>
                   <p className="text-slate-300">
-                    构建“现实行为 × 区块链确权 × 公益激励”全链路体系
+                    构建“稳定兑换 × 黄金锚定 × 治理激励”链上闭环体系
                   </p>
                 </div>
 
@@ -611,6 +619,32 @@ function HomeView() {
                   {homeCopy.ctaButton}
                 </Link>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="pb-20 px-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold">合作伙伴</h2>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {partnerLogos.map((partner) => (
+                <div
+                  key={partner.name}
+                  className="glass-panel rounded-2xl border border-white/10 h-28 px-4 flex items-center justify-center"
+                >
+                  {partner.logo ? (
+                    <img
+                      src={partner.logo}
+                      alt={partner.name}
+                      className={`max-w-full object-contain  ${partner.name === '币安' ? 'max-h-30' : 'max-h-20'}`}
+                    />
+                  ) : (
+                    <span className="text-white/85 font-bold text-center leading-tight">{partner.name}</span>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </section>

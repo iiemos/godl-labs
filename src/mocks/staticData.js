@@ -176,11 +176,11 @@ export const staticApiData = {
 };
 
 export const staticStakeData = {
-  usdtBalance: '12000',
-  aigBalance: '1280',
-  userTotalStaked: '1000',
-  hourlyLimitByType: [50000, 200000],
-  remainingHourlyLimitByType: [48120, 172400],
+  usdtBalance: '15000',
+  aigBalance: '5600',
+  userTotalStaked: '6500',
+  hourlyLimitByType: [200000, 300000, 400000],
+  remainingHourlyLimitByType: [180000, 260000, 350000],
   userReinvestTaxObj: {
     canClaim: true,
     amount: '30.5',
@@ -191,22 +191,22 @@ export const staticStakeData = {
   stakeList: [
     {
       oriStakeTime: now - 3600 * 10,
-      amount: '800',
-      amountWei: 800,
+      amount: '1000',
+      amountWei: 1000,
       status: false,
       stakeIndex: 1,
-      reward: '42.20',
-      canEndData: now + 3600 * 20,
+      reward: '95.00',
+      canEndData: now + 3600 * 24 * 60,
       bEndData: false,
     },
     {
-      oriStakeTime: now - 3600 * 30,
-      amount: '200',
-      amountWei: 200,
+      oriStakeTime: now - 3600 * 24,
+      amount: '500',
+      amountWei: 500,
       status: false,
       stakeIndex: 0,
-      reward: '6.80',
-      canEndData: now - 600,
+      reward: '16.25',
+      canEndData: now + 3600 * 24 * 89,
       bEndData: false,
     },
   ],
@@ -214,7 +214,9 @@ export const staticStakeData = {
 
 export const staticSwapData = {
   usdtBalance: '6000',
-  mgnBalance: '1520',
+  mgnBalance: '7200',
+  usgdBalance: '7200',
+  godlBalance: '18.5000',
   usdtAllowanceForTrading: '1000000',
   usdtAllowance: '1000000',
   mgnAllowance: '1000000',
@@ -224,7 +226,11 @@ export const staticSwapData = {
     remaining: '3800.000',
     hasQuota: true,
   },
-  usd1ToMgnRate: '1.245000',
-  mgnToUsd1Rate: '0.803213',
+  usd1ToMgnRate: '1.000000',
+  mgnToUsd1Rate: '1.000000',
+  usdtToUsgdRate: '1.000000',
+  usgdToUsdtRate: '1.000000',
+  usgdToGodlRate: '0.002500',
+  godlToUsgdRate: '400.000000',
   isPaused: false,
 };

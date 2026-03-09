@@ -33,20 +33,6 @@ import {
 
 const emptyTicketHoldings = () => TICKET_OPTIONS.map(() => 0);
 
-const parseThirtyDayTicketCounts = (amount) => {
-  const normalizedAmount = Math.max(0, Math.floor(Number(amount) || 0));
-  for (let believerCount = Math.floor(normalizedAmount / 500); believerCount >= 0; believerCount -= 1) {
-    const remaining = normalizedAmount - believerCount * 500;
-    if (remaining % 300 === 0) {
-      return {
-        creator: remaining / 300,
-        believer: believerCount
-      };
-    }
-  }
-  return { creator: 0, believer: 0 };
-};
-
 const useStakeStore = create((set, get) => ({
   // Basic state
   isConnected: USE_STATIC_DATA,
@@ -60,15 +46,16 @@ const useStakeStore = create((set, get) => ({
   aigBalance: '0',
   
   // Staking configuration
-  stakeAmount: 100,
-  selectedStakeIndex: 1, // 0 = 1 day, 1 = 30 days
-  sliderMin: 100,
-  sliderMax: 500,
+  stakeAmount: 500,
+  selectedStakeIndex: 0, // 0 = 3 months, 1 = 6 months, 2 = 12 months
+  sliderMin: 500,
+  sliderMax: 5000,
   
   // Lock options
   lockOptions: [
-    { days: 1, index: 0, rate: 0.3 },
-    { days: 30, index: 1, rate: 47.33 }
+    { days: 90, months: 3, index: 0, rate: 13, gdlMultiplier: 0.8 },
+    { days: 180, months: 6, index: 1, rate: 19, gdlMultiplier: 1.2 },
+    { days: 365, months: 12, index: 2, rate: 30, gdlMultiplier: 1.6 }
   ],
   
   // Staking records
@@ -76,8 +63,8 @@ const useStakeStore = create((set, get) => ({
   loadingRecords: false,
   
   // Limits and restrictions
-  hourlyLimitByType: [0, 0],
-  remainingHourlyLimitByType: [0, 0],
+  hourlyLimitByType: [0, 0, 0],
+  remainingHourlyLimitByType: [0, 0, 0],
   usedHourlyAmount: 0,
   userTotalStaked: 0,
   
@@ -163,10 +150,8 @@ const useStakeStore = create((set, get) => ({
     
     if (!stakeAmount) {
       error = 'Please enter stake amount';
-    } else if (enableAmountLimit && (stakeAmount < sliderMin || stakeAmount > sliderMax)) {
+    } else if (stakeAmount < sliderMin || stakeAmount > sliderMax) {
       error = `Amount must be between ${sliderMin} and ${sliderMax}`;
-    } else if (stakeAmount % 10 !== 0) {
-      error = 'Amount must be a multiple of 10';
     }
     
     set({ stakeAmountError: error });
@@ -186,20 +171,13 @@ const useStakeStore = create((set, get) => ({
 
     records.forEach((record) => {
       const amount = Math.max(0, Math.floor(Number(record.amount) || 0));
-      if (record.stakeIndex === 0) {
-        nextHoldings[0] += Math.floor(amount / 100);
-      } else if (record.stakeIndex === 1) {
-        const matchedCreator = amount / 300;
-        const matchedBeliever = amount / 500;
-        if (Number.isInteger(matchedCreator)) {
-          nextHoldings[1] += matchedCreator;
-        } else if (Number.isInteger(matchedBeliever)) {
-          nextHoldings[2] += matchedBeliever;
-        } else {
-          const parsed = parseThirtyDayTicketCounts(amount);
-          nextHoldings[1] += parsed.creator;
-          nextHoldings[2] += parsed.believer;
-        }
+      const stakeIndex = Number(record.stakeIndex);
+      const ticketIndex = TICKET_OPTIONS.findIndex(
+        (ticket) => ticket.stakeIndex === stakeIndex && amount >= ticket.price
+      );
+      if (ticketIndex >= 0) {
+        const ticket = TICKET_OPTIONS[ticketIndex];
+        nextHoldings[ticketIndex] += Math.max(1, Math.floor(amount / ticket.price));
       }
     });
 
@@ -317,24 +295,28 @@ const useStakeStore = create((set, get) => ({
         // stakingContract.userStakeInfos('0xc49592daef21fa0e541b0c50cc2fc615c4775a91'),
         // 2: Get hourly limits
         (async () => {
-          const [limit1Day, limit30Day] = await Promise.all([
+          const [limit3m, limit6m, limit12m] = await Promise.all([
             stakingContract.getHourlyLimitByType(0),
-            stakingContract.getHourlyLimitByType(1)
+            stakingContract.getHourlyLimitByType(1),
+            stakingContract.getHourlyLimitByType(2)
           ]);
           return [
-            Number(limit1Day.toString()),
-            Number(limit30Day.toString())
+            Number(limit3m.toString()),
+            Number(limit6m.toString()),
+            Number(limit12m.toString())
           ];
         })(),
         // 3: Get remaining limits
         (async () => {
-          const [remaining1Day, remaining30Day] = await Promise.all([
+          const [remaining3m, remaining6m, remaining12m] = await Promise.all([
             stakingContract.getRemainingHourlyLimitByType(0),
-            stakingContract.getRemainingHourlyLimitByType(1)
+            stakingContract.getRemainingHourlyLimitByType(1),
+            stakingContract.getRemainingHourlyLimitByType(2)
           ]);
           return [
-            Number(remaining1Day.toString()),
-            Number(remaining30Day.toString())
+            Number(remaining3m.toString()),
+            Number(remaining6m.toString()),
+            Number(remaining12m.toString())
           ];
         })(),
         // 4: Get total staked
@@ -354,11 +336,11 @@ const useStakeStore = create((set, get) => ({
       
       const hourlyLimits = results[2].status === 'fulfilled' 
         ? results[2].value 
-        : [0, 0];
+        : [0, 0, 0];
       
       const remainingLimits = results[3].status === 'fulfilled' 
         ? results[3].value 
-        : [0, 0];
+        : [0, 0, 0];
       
       const totalStaked = results[4].status === 'fulfilled' 
         ? formatEther(results[4].value) 
@@ -452,14 +434,17 @@ const useStakeStore = create((set, get) => ({
 
       if (USE_STATIC_DATA) {
         const nowSec = Math.floor(Date.now() / 1000);
-        const lockDays = selectedStakeIndex === 0 ? 1 : 30;
+        const selectedOption = get().lockOptions[selectedStakeIndex] || get().lockOptions[0];
+        const lockDays = selectedOption.days;
+        const annualRate = (selectedOption.rate || 0) / 100;
+        const expectedReward = Number(stakeAmount) * annualRate * (lockDays / 365);
         const newRecord = {
           oriStakeTime: nowSec,
           amount: String(stakeAmount),
           amountWei: Number(stakeAmount),
           status: false,
           stakeIndex: selectedStakeIndex,
-          reward: selectedStakeIndex === 0 ? (stakeAmount * 0.003).toFixed(2) : (stakeAmount * 0.013 * lockDays).toFixed(2),
+          reward: expectedReward.toFixed(2),
           canEndData: nowSec + lockDays * 24 * 3600,
           bEndData: false
         };
@@ -475,7 +460,7 @@ const useStakeStore = create((set, get) => ({
           lastStakeTime: Date.now(),
           isStakingBusy: false,
           isProcessing: false,
-          stakeAmount: 100
+          stakeAmount: 500
         });
 
         get().startCountdown();
@@ -577,7 +562,7 @@ const useStakeStore = create((set, get) => ({
       // Reload data from contracts
       await get().loadStakeData();
       
-      set({ isStakingBusy: false, isProcessing: false, stakeAmount: 100 });
+      set({ isStakingBusy: false, isProcessing: false, stakeAmount: 500 });
       
     } catch (error) {
       console.error('Stake failed:', error);
@@ -682,8 +667,9 @@ const useStakeStore = create((set, get) => ({
     }
     
     // 实时奖励计算
-    // 根据质押类型获取日收益率（1天期为0.3%，30天期为1.3%）
-    const dailyRate = record.stakeIndex === 0 ? 0.003 : 0.013;
+    const option = get().lockOptions.find((item) => item.index === Number(record.stakeIndex));
+    const annualRate = ((option?.rate || 0) / 100);
+    const dailyRate = annualRate / 365;
     // 一天的秒数
     const secondsPerDay = 86400;
     // 计算每秒收益率（复利计算）
@@ -808,8 +794,9 @@ const useStakeStore = create((set, get) => ({
   
   // Transform day index to display
   transformDay: (index) => {
-    if (index == '0') return '1D';
-    if (index == '1') return '30D';
+    if (index == '0') return '3M';
+    if (index == '1') return '6M';
+    if (index == '2') return '12M';
     return '';
   },
   

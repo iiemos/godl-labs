@@ -3,18 +3,37 @@ import { Icon } from "@iconify/react";
 import { useAccount } from "wagmi";
 import { useTranslation } from "react-i18next";
 import Notification from "../components/Notification.jsx";
-import ReferrerDialog from "../components/ReferrerDialog.jsx";
 import { useWalletVerification } from '../App.jsx';
 import { MOCK_ADDRESS, USE_STATIC_DATA } from '../config/mock.js';
 import {
   fetchUserInfo,
-  fetchTeamInfo,
   fetchTeamHierarchy,
-  fetchTodayStake,
-  fetchPerformance,
   formatWei,
   formatAddress,
 } from "../api/index.js";
+
+const INITIAL_PROPOSALS = [
+  {
+    id: "P-240301",
+    title: "启动 GDL/USGD 第二矿池",
+    description: "按照白皮书规划开放第二矿池，权重设为 3，首月限额开启。",
+    proposer: "0xA8B4...D901",
+    createdAt: "2026-03-01 10:00",
+    endsAt: "2026-03-10 10:00",
+    yesVotes: 1240.5,
+    noVotes: 128.3,
+  },
+  {
+    id: "P-240227",
+    title: "USGD/GODL 兑换手续费参数",
+    description: "提议将兑换手续费暂定为 0.3%，用于回购并销毁 GDL。",
+    proposer: "0xB172...3F2C",
+    createdAt: "2026-02-27 09:30",
+    endsAt: "2026-03-05 09:30",
+    yesVotes: 965.2,
+    noVotes: 401.6,
+  },
+];
 
 function TeamView() {
   const { address: walletAddress, isConnected: walletConnected } = useAccount();
@@ -29,26 +48,23 @@ function TeamView() {
   const [userInfo, setUserInfo] = useState(null);
   const [userLoading, setUserLoading] = useState(false);
 
-  // Team info
-  const [teamInfo, setTeamInfo] = useState(null);
-  const [teamLoading, setTeamLoading] = useState(false);
-
-  // Today stake data
-  const [todayStake, setTodayStake] = useState(null);
-  const [todayStakeLoading, setTodayStakeLoading] = useState(false);
-
-  // Performance data
-  const [performance, setPerformance] = useState(null);
-  const [performanceLoading, setPerformanceLoading] = useState(false);
-
   // Direct referrals list
   const [directUsers, setDirectUsers] = useState([]);
   const [hierarchyLoading, setHierarchyLoading] = useState(false);
 
-  // Invite functionality
-  const [showInviteModal, setShowInviteModal] = useState(false);
-  const [showReferrerDialog, setShowReferrerDialog] = useState(false);
+  // Governance proposal modal
+  const [showProposalModal, setShowProposalModal] = useState(false);
   const [notifications, setNotifications] = useState([]); // 通知数组
+  const [proposals, setProposals] = useState(INITIAL_PROPOSALS);
+  const [proposalForm, setProposalForm] = useState({
+    title: "",
+    description: "",
+    durationDays: 3,
+  });
+  const [voteHistory, setVoteHistory] = useState({});
+  const [walletGdlBalance, setWalletGdlBalance] = useState(5000);
+  const [stakedGdl, setStakedGdl] = useState(1200);
+  const [stakeInput, setStakeInput] = useState("100");
   
   // Notification helper functions
   const showNotification = (message, type = 'info') => {
@@ -60,7 +76,6 @@ function TeamView() {
     setNotifications(prev => prev.filter(notification => notification.id !== id));
   };
 
-  // 用户业绩详情 fetchPerformance
   // Fetch user info
   useEffect(() => {
     let mounted = true;
@@ -82,33 +97,6 @@ function TeamView() {
       }
     }
     loadUserInfo();
-    return () => {
-      mounted = false;
-    };
-  }, [address, isConnected, isVerified]);
-
-  // Fetch team info
-  useEffect(() => {
-    let mounted = true;
-    async function loadTeamInfo() {
-      if (!isConnected || !address || !isVerified) {
-        setTeamInfo(null);
-        return;
-      }
-      setTeamLoading(true);
-      try {
-        const res = await fetchTeamInfo(address);
-        console.log('我的团队信息',res);
-        if (mounted && res && res.success) {
-          setTeamInfo(res);
-        }
-      } catch (e) {
-        // ignore
-      } finally {
-        if (mounted) setTeamLoading(false);
-      }
-    }
-    loadTeamInfo();
     return () => {
       mounted = false;
     };
@@ -140,60 +128,6 @@ function TeamView() {
     };
   }, [address, isConnected, isVerified]);
 
-  // Fetch 获取今日质押数据
-  useEffect(() => {
-    let mounted = true;
-    async function loadTodayStake() {
-      if (!isConnected || !address || !isVerified) {
-        setTodayStake(null);
-        return;
-      }
-      setTodayStakeLoading(true);
-      try {
-        const res = await fetchTodayStake(address);
-        if (mounted && res && res.success) {
-          setTodayStake(res);
-        }
-      } catch (e) {
-        // ignore
-      } finally {
-        if (mounted) setTodayStakeLoading(false);
-      }
-    }
-    loadTodayStake();
-    return () => {
-      mounted = false;
-    };
-  }, [address, isConnected, isVerified]);
-
-  // Fetch 获取奖励数据
-  useEffect(() => {
-    let mounted = true;
-    async function loadPerformance() {
-      if (!isConnected || !address || !isVerified) {
-        setPerformance(null);
-        return;
-      }
-      setPerformanceLoading(true);
-      try {
-        const res = await fetchPerformance(address);
-        if (mounted && res && res.success) {
-          
-          setPerformance(res);
-        }
-      } catch (e) {
-        console.log('eeeee',e);
-        // ignore
-      } finally {
-        if (mounted) setPerformanceLoading(false);
-      }
-    }
-    loadPerformance();
-    return () => {
-      mounted = false;
-    };
-  }, [address, isConnected, isVerified]);
-
   // Get level icon based on team level
   const getLevelIcon = (level) => {
     if (level >= 5) return { icon: "mdi:diamond", color: "text-primary" };
@@ -202,56 +136,121 @@ function TeamView() {
     return { icon: "mdi:workspace-premium", color: "text-gray-400" };
   };
 
-  // Generate invite link
-  const inviteLink =
-    isConnected && address ? `${window.location.origin}?code=${address}` : "";
+  const getProposalStatus = (proposal) => {
+    const endAt = new Date(proposal.endsAt).getTime();
+    return endAt > Date.now() ? "active" : "closed";
+  };
 
-  // Copy invite link to clipboard
-  const copyInviteLink = async () => {
-    if (!inviteLink) return;
+  const votingPower = Math.max(1, Number((stakedGdl / 100).toFixed(2)));
+  const activeProposalCount = proposals.filter((item) => getProposalStatus(item) === "active").length;
+  const closedProposalCount = proposals.length - activeProposalCount;
+  const votedProposalCount = Object.keys(voteHistory).length;
+  const totalVotes = proposals.reduce((sum, item) => sum + item.yesVotes + item.noVotes, 0);
+  const yesVotes = proposals.reduce((sum, item) => sum + item.yesVotes, 0);
+  const supportRate = totalVotes > 0 ? ((yesVotes / totalVotes) * 100).toFixed(1) : "0.0";
+  const totalGdl = walletGdlBalance + stakedGdl;
+  const governanceStakeRate = totalGdl > 0 ? ((stakedGdl / totalGdl) * 100).toFixed(1) : "0.0";
 
-    try {
-      // 方法1：尝试使用 navigator.clipboard.writeText
-      // if (navigator.clipboard && window.isSecureContext) {
-      //   await navigator.clipboard.writeText(inviteLink);
-      //   showNotification(t('team.linkCopied'), 'success');
-      //   return;
-      // }
-      
-      // 方法2：使用 document.execCommand('copy') with textarea
-      const textArea = document.createElement('textarea');
-      textArea.value = inviteLink;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-999999px';
-      textArea.style.top = '-999999px';
-      textArea.style.opacity = '0';
-      textArea.style.pointerEvents = 'none';
-      textArea.setAttribute('readonly', '');
-      document.body.appendChild(textArea);
-      
-      // 处理不同浏览器的select行为
-      textArea.select();
-      textArea.setSelectionRange(0, textArea.value.length);
-      
-      try {
-        const success = document.execCommand('copy');
-        if (success) {
-          showNotification(t('team.linkCopied'), 'success');
-          return;
-        }
-      } catch (execError) {
-        console.warn('execCommand copy failed:', execError);
-      } finally {
-        document.body.removeChild(textArea);
-      }
-      
-      // 方法3：提示用户手动复制
-      showNotification(t('team.linkCopied'), 'success');
-    } catch (error) {
-      console.error("Failed to copy invite link:", error);
-      // 即使出错也显示复制成功，让用户手动复制
-      showNotification(t('team.linkCopied'), 'success');
+  const handleVoteProposal = (proposalId, support) => {
+    if (!isConnected || !address) {
+      showNotification("请先连接钱包", "error");
+      return;
     }
+    if (!isVerified) {
+      showNotification("请先完成钱包签名验证", "error");
+      return;
+    }
+    if (voteHistory[proposalId]) {
+      showNotification("你已对该提案投票", "error");
+      return;
+    }
+
+    const targetProposal = proposals.find((item) => item.id === proposalId);
+    if (!targetProposal || getProposalStatus(targetProposal) !== "active") {
+      showNotification("该提案已结束，无法投票", "error");
+      return;
+    }
+
+    setProposals((prev) =>
+      prev.map((item) => {
+        if (item.id !== proposalId) return item;
+        if (support === "yes") {
+          return { ...item, yesVotes: Number((item.yesVotes + votingPower).toFixed(2)) };
+        }
+        return { ...item, noVotes: Number((item.noVotes + votingPower).toFixed(2)) };
+      })
+    );
+    setVoteHistory((prev) => ({ ...prev, [proposalId]: support }));
+    showNotification(`投票成功：${support === "yes" ? "支持" : "反对"} +${votingPower}`, "success");
+  };
+
+  const handleCreateProposal = () => {
+    if (!isConnected || !address) {
+      showNotification("请先连接钱包", "error");
+      return;
+    }
+    if (!isVerified) {
+      showNotification("请先完成钱包签名验证", "error");
+      return;
+    }
+    const title = proposalForm.title.trim();
+    const description = proposalForm.description.trim();
+    if (!title || !description) {
+      showNotification("请填写完整的提案标题和内容", "error");
+      return;
+    }
+
+    const now = new Date();
+    const end = new Date(now.getTime() + Number(proposalForm.durationDays) * 24 * 60 * 60 * 1000);
+    const newProposal = {
+      id: `P-${Date.now().toString().slice(-6)}`,
+      title,
+      description,
+      proposer: formatAddress(address),
+      createdAt: now.toLocaleString(),
+      endsAt: end.toLocaleString(),
+      yesVotes: 0,
+      noVotes: 0,
+    };
+    setProposals((prev) => [newProposal, ...prev]);
+    setProposalForm({ title: "", description: "", durationDays: 3 });
+    setShowProposalModal(false);
+    showNotification("提案已发布，进入投票期", "success");
+  };
+
+  const handleStakeGovernance = (mode) => {
+    if (!isConnected || !address) {
+      showNotification("请先连接钱包", "error");
+      return;
+    }
+    if (!isVerified) {
+      showNotification("请先完成钱包签名验证", "error");
+      return;
+    }
+    const amount = Number(stakeInput);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      showNotification("请输入有效的 GDL 数量", "error");
+      return;
+    }
+
+    if (mode === "stake") {
+      if (amount > walletGdlBalance) {
+        showNotification("钱包 GDL 余额不足", "error");
+        return;
+      }
+      setWalletGdlBalance((prev) => Number((prev - amount).toFixed(2)));
+      setStakedGdl((prev) => Number((prev + amount).toFixed(2)));
+      showNotification(`治理质押成功：${amount} GDL`, "success");
+      return;
+    }
+
+    if (amount > stakedGdl) {
+      showNotification("治理质押余额不足", "error");
+      return;
+    }
+    setStakedGdl((prev) => Number((prev - amount).toFixed(2)));
+    setWalletGdlBalance((prev) => Number((prev + amount).toFixed(2)));
+    showNotification(`治理赎回成功：${amount} GDL`, "success");
   };
   return (
     <div className=" dark:bg-background-dark font-display text-white min-h-screen">
@@ -279,68 +278,68 @@ function TeamView() {
                 </div>
                 <button
                   className="flex items-center gap-2 rounded-xl h-12 px-6 bg-white/5 border border-white/10 text-white text-lg font-bold hover:bg-white/10 transition-all"
-                  onClick={() => setShowInviteModal(true)}
+                  onClick={() => setShowProposalModal(true)}
                 >
                   <Icon icon="mdi:person-add" />
-                  <span>{t('team.inviteNewMember')}</span>
+                  <span>发布提案</span>
                 </button>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
                 <div className="glass-panel rounded-xl py-3 px-6 lg:p-6  flex flex-col gap-1 lg:gap-2 neon-border-purple border-l-4 border-l-white/20">
                   <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">
-                    {t('team.yourLevel')}
+                    治理等级
                   </p>
                   <div className="flex items-baseline justify-between">
                     <p className="text-2xl font-bold leading-tight">
-                      {userLoading ? "..." : 'S'+userInfo?.team_level || 'S0'}
+                      {userLoading ? "..." : `S${userInfo?.team_level ?? 0}`}
                     </p>
                     <p className="text-primary text-lg font-medium flex items-center">
                       <Icon icon="mdi:star" className="text-lg mr-1" />
-                      {t('team.level')} {userInfo?.team_level || 0}
+                      权重层级
                     </p>
                   </div>
                 </div>
 
                 <div className="glass-panel rounded-xl py-3 px-6 lg:p-6  flex flex-col gap-1 lg:gap-2 neon-border-purple border-l-4 border-l-primary">
                   <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">
-                    {t('common.teamSize')}
+                    治理参与地址
                   </p>
                   <div className="flex items-baseline justify-between">
                     <p className="text-3xl font-bold leading-tight">
-                      {teamLoading ? "..." : teamInfo?.team_count || 0}
+                      {hierarchyLoading ? "..." : directUsers.length}
                     </p>
                     <p className="text-accent-blue text-lg font-medium flex items-center">
                       <Icon icon="mdi:account-group" className="text-lg mr-1" />
-                      {t('team.members')}
+                      地址
                     </p>
                   </div>
                 </div>
 
                 <div className="glass-panel rounded-xl py-3 px-6 lg:p-6  flex flex-col gap-1 lg:gap-2 neon-border-purple border-l-4 border-l-primary">
                   <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">
-                    {t('common.directPerformance')}
+                    进行中提案
                   </p>
                   <div className="flex items-baseline justify-between">
                     <p className="text-3xl font-bold leading-tight">
-                      ${teamLoading ? "..." : formatWei(teamInfo?.user?.direct_performance || 0)}
+                      {activeProposalCount}
                     </p>
                     <p className="text-[#0bda6f] text-lg font-medium flex items-center">
-                      USDT
+                      进行中
                     </p>
                   </div>
                 </div>
 
                 <div className="glass-panel rounded-xl py-3 px-6 lg:p-6  flex flex-col gap-1 lg:gap-2 neon-border-purple border-l-4 border-l-primary">
                   <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">
-                    {t('common.teamTodayNewPerformance')}
+                    已结束提案
                   </p>
                   <div className="flex items-baseline justify-between">
                     <p className="text-3xl font-bold leading-tight">
-                      ${todayStakeLoading ? "..." : formatWei(todayStake?.today_team_stake || 0)}
+                      {closedProposalCount}
                     </p>
                     <p className="text-[#0bda6f] text-lg font-medium flex items-center">
-                      USDT
+                      已结束
                     </p>
                   </div>
                 </div>
@@ -352,30 +351,29 @@ function TeamView() {
 
                 <div className="glass-panel rounded-xl py-2 px-6 lg:p-6 flex flex-col gap-1 lg:gap-2 neon-border-purple border-l-4 border-l-accent-blue">
                   <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">
-                    {t('common.directReferrals')}
+                    我的投票记录
                   </p>
                   <div className="flex items-baseline justify-between">
                     <p className="text-3xl font-bold leading-tight text-accent-blue">
-                      {teamLoading ? "..." : teamInfo?.direct_count || 0}
+                      {votedProposalCount}
                     </p>
                     <p className="text-[#0bda6f] text-lg font-medium flex items-center">
                       <Icon icon="mdi:check-circle" className="text-lg mr-1" />
-                      {t('team.valid')}: {userInfo?.valid_direct_count || 0}
+                      / {proposals.length}
                     </p>
                   </div>
                 </div>
 
                 <div className="glass-panel rounded-xl py-2 px-6 lg:p-6 flex flex-col gap-1 lg:gap-2 neon-border-purple border-l-4 border-l-primary">
                   <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">
-                    {t('common.yourPerformance')}
+                    累计投票量
                   </p>
                   <div className="flex items-baseline justify-between">
                     <p className="text-2xl font-bold leading-tight truncate">
-                      {/* ${formatWei(userInfo?.team_performance || "0", 0)} */}
-                      ${formatWei(userInfo?.personal_performance || "0", 0)}
+                      {totalVotes.toFixed(1)}
                     </p>
                     <p className="text-[#0bda6f] text-lg font-medium flex items-center">
-                      USDT
+                      支持率 {supportRate}%
                     </p>
                   </div>
                 </div>
@@ -383,236 +381,210 @@ function TeamView() {
 
                 <div className="glass-panel rounded-xl py-2 px-6 lg:p-6  flex flex-col gap-1 lg:gap-2 neon-border-purple border-l-4 border-l-purple-500">
                   <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">
-                    {t('common.smallAreaPerformance')}
+                    已质押 GDL
                   </p>
                   <div className="flex items-baseline justify-between">
                     <p className="text-3xl font-bold leading-tight text-purple-400">
-                      {performanceLoading ? "..." : performance?.small_area_performance ? `$${formatWei(performance.small_area_performance, 0)}` : "0"}
+                      {stakedGdl}
                     </p>
                     <p className="text-purple-400 text-lg font-medium flex items-center">
-                      USDT
+                      权重 {votingPower}
                     </p>
                   </div>
                 </div>
 
                 <div className="glass-panel rounded-xl py-2 px-6 lg:p-6  flex flex-col gap-1 lg:gap-2 neon-border-purple border-l-4 border-l-blue-500">
                   <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">
-                    {t('common.allPerformance')}
+                    可用 GDL
                   </p>
                   <div className="flex items-baseline justify-between">
                     <p className="text-3xl font-bold leading-tight text-blue-400">
-                      {performanceLoading ? "..." : performance?.team_performance ? `$${formatWei(performance.team_performance, 0)}` : "0"}
+                      {walletGdlBalance}
                     </p>
                     <p className="text-blue-400 text-lg font-medium flex items-center">
-                      USDT
+                      质押率 {governanceStakeRate}%
                     </p>
                   </div>
                 </div>
 
               </div>
 
-              <div className="glass-panel p-6 rounded-xl border border-white/10 mb-10">
-                <div className="space-y-4">
-                  <h3 className="text-xl font-bold flex items-center gap-2">
-                    <Icon
-                      icon="mdi:account-supervisor"
-                      className="text-primary"
-                    />
-                    {t('team.yourReferrer')} & {t('team.yourInvitationLink')}
-                  </h3>
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-10">
+                <div className="xl:col-span-2 glass-panel p-6 rounded-xl border border-white/10">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                      <Icon icon="mdi:vote-outline" className="text-primary" />
+                      提案投票列表
+                    </h3>
+                    <p className="text-sm text-white/60">我的投票权重：{votingPower}</p>
+                  </div>
 
-                  <div className="grid lg:grid-cols-2 gap-4">
-                    {/* Referrer Info */}
-
-                    {isConnected && (
-                      <div className="">
-                        <p className="text-[#a692c9] text-lg mb-2">
-                          {t('team.yourReferrer')}
-                        </p>
-                        {userInfo?.referrer && userInfo.referrer !== "0x0000000000000000000000000000000000000000" ? (
-                          <div className="glass-panel p-4 rounded-lg border border-white/10 mb-4 flex items-center ">
-                            <span className="text-sm text-white font-mono break-all">
-                              {formatAddress(userInfo.referrer)}
-                            </span>
-                          </div>
-                        ) : (
-                          
-                          <div className="">
-                            <div className="glass-panel p-4 rounded-lg border border-white/10 mb-4 flex flex-col items-center gap-4">
-                              <span className="text-sm text-white/60">
-                                {t('team.notBound')}
+                  {proposals.length === 0 ? (
+                    <div className="text-center text-white/40 py-12">暂无治理提案</div>
+                  ) : (
+                    <div className="space-y-4">
+                      {proposals.map((proposal) => {
+                        const status = getProposalStatus(proposal);
+                        const totalVotes = proposal.yesVotes + proposal.noVotes;
+                        const yesRate = totalVotes > 0 ? (proposal.yesVotes / totalVotes) * 100 : 0;
+                        const hasVoted = !!voteHistory[proposal.id];
+                        return (
+                          <div key={proposal.id} className="rounded-xl border border-white/10 bg-white/5 p-4">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+                              <div>
+                                <p className="text-white font-bold text-lg">{proposal.title}</p>
+                                <p className="text-white/60 text-sm mt-1">{proposal.description}</p>
+                              </div>
+                              <span
+                                className={`px-3 py-1 rounded text-xs font-bold w-fit ${
+                                  status === "active" ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-300"
+                                }`}
+                              >
+                                {status === "active" ? "投票中" : "已结束"}
                               </span>
                             </div>
-                            <button
-                              className="px-4 py-3 mt-4 w-full bg-primary hover:bg-primary/90 rounded-lg text-white font-bold transition-colors flex items-center justify-center gap-2"
-                              onClick={() => setShowReferrerDialog(true)}
-                            >
-                              <Icon icon="mdi:link" />
-                              {t('team.bindSuperior')}
-                            </button>
+
+                            <div className="text-xs text-white/60 flex flex-wrap gap-4 mb-3">
+                              <span>提案ID: {proposal.id}</span>
+                              <span>发起人: {proposal.proposer}</span>
+                              <span>截止: {proposal.endsAt}</span>
+                            </div>
+
+                            <div className="h-2 rounded-full bg-white/10 overflow-hidden mb-2">
+                              <div className="h-full bg-green-500" style={{ width: `${yesRate}%` }} />
+                            </div>
+                            <div className="flex items-center justify-between text-sm mb-4">
+                              <span className="text-green-400">支持: {proposal.yesVotes}</span>
+                              <span className="text-red-400">反对: {proposal.noVotes}</span>
+                            </div>
+
+                            <div className="flex gap-3">
+                              <button
+                                className={`flex-1 py-2 rounded-lg font-bold ${
+                                  status === "active" && !hasVoted
+                                    ? "bg-green-500/20 text-green-300 hover:bg-green-500/30"
+                                    : "bg-gray-500/20 text-gray-400 cursor-not-allowed"
+                                }`}
+                                disabled={status !== "active" || hasVoted}
+                                onClick={() => handleVoteProposal(proposal.id, "yes")}
+                              >
+                                支持
+                              </button>
+                              <button
+                                className={`flex-1 py-2 rounded-lg font-bold ${
+                                  status === "active" && !hasVoted
+                                    ? "bg-red-500/20 text-red-300 hover:bg-red-500/30"
+                                    : "bg-gray-500/20 text-gray-400 cursor-not-allowed"
+                                }`}
+                                disabled={status !== "active" || hasVoted}
+                                onClick={() => handleVoteProposal(proposal.id, "no")}
+                              >
+                                反对
+                              </button>
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-[#a692c9] text-lg mb-2">
-                        {t('team.yourInvitationLink')}
-                      </p>
-                      <div className=" gap-3">
-                        <div className="glass-panel flex-1 bg-white/5 border border-white/10 rounded-lg p-4 text-sm font-mono break-all">
-                          {inviteLink}
-                        </div>
-                        <button
-                          onClick={copyInviteLink}
-                          className="px-4 py-3 mt-4 w-full bg-primary hover:bg-primary/90 rounded-lg text-white font-bold transition-colors flex items-center justify-center gap-2"
-                        >
-                          <Icon icon="mdi:content-copy" />
-                          <span>{t('team.copy')}</span>
-                        </button>
-                      </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="glass-panel p-6 rounded-xl border border-white/10 h-fit">
+                  <h3 className="text-xl font-bold flex items-center gap-2 mb-5">
+                    <Icon icon="mdi:database-lock-outline" className="text-primary" />
+                    GDL 治理质押
+                  </h3>
+
+                  <div className="space-y-3 mb-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-white/60">钱包余额</span>
+                      <span className="font-bold">{walletGdlBalance} GDL</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-white/60">已质押</span>
+                      <span className="font-bold text-primary">{stakedGdl} GDL</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-white/60">当前投票权重</span>
+                      <span className="font-bold">{votingPower}</span>
                     </div>
                   </div>
 
-                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <p className="text-[#a692c9] text-lg font-medium mb-2">
-                      {t('team.howItWorks')}
-                    </p>
-                    <ul className="text-lg space-y-2 text-white/80">
-                      <li className="flex items-start gap-2">
-                        <Icon
-                          icon="mdi:arrow-right"
-                          className="text-primary mt-1 flex-shrink-0"
-                        />
-                        <span>
-                          {t('team.shareInviteLink')}
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Icon
-                          icon="mdi:arrow-right"
-                          className="text-primary mt-1 flex-shrink-0"
-                        />
-                        <span>
-                          {t('team.whenSomeoneJoins')}
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Icon
-                          icon="mdi:arrow-right"
-                          className="text-primary mt-1 flex-shrink-0"
-                        />
-                        <span>
-                          {t('team.earnRewards')}
-                        </span>
-                      </li>
-                    </ul>
+                  <div className="space-y-3">
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={stakeInput}
+                      onChange={(e) => setStakeInput(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-primary"
+                      placeholder="输入 GDL 数量"
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        className="py-2 rounded-lg font-bold bg-primary/20 text-primary hover:bg-primary/30"
+                        onClick={() => handleStakeGovernance("stake")}
+                      >
+                        质押
+                      </button>
+                      <button
+                        className="py-2 rounded-lg font-bold bg-white/10 text-white hover:bg-white/20"
+                        onClick={() => handleStakeGovernance("unstake")}
+                      >
+                        赎回
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+                    GDL 治理质押后可参与提案投票，投票权重与质押量相关。提案通过后进入执行阶段。
                   </div>
                 </div>
               </div>
 
-              {/* Member List Header */}
-              <div className="flex items-center justify-between mb-6 px-2">
-                <h2 className="text-2xl font-bold leading-tight">
-                  {t('team.directReferrals')}
-                </h2>
-                <div className="flex items-center gap-3">
-                  <span className="text-white/60 text-lg">
-                    {directUsers.length} {t('team.members')}
-                  </span>
+              <div className="glass-panel p-6 rounded-xl border border-white/10 mb-20">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold flex items-center gap-2">
+                    <Icon icon="mdi:account-group-outline" className="text-primary" />
+                    治理参与成员
+                  </h3>
+                  <span className="text-sm text-white/60">{directUsers.length} 个地址</span>
                 </div>
+
+                {hierarchyLoading ? (
+                  <div className="text-center text-white/40 py-8">{t('team.loadingTeamMembers')}</div>
+                ) : directUsers.length === 0 ? (
+                  <div className="text-center text-white/40 py-8">
+                    {isConnected ? "暂无治理成员数据" : t('team.connectWalletToView')}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {directUsers.slice(0, 6).map((user, index) => {
+                      const levelInfo = getLevelIcon(user.team_level || 0);
+                      return (
+                        <div key={user.address || index} className="rounded-xl border border-white/10 bg-white/5 p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <p className="font-mono text-sm">{formatAddress(user.address)}</p>
+                            <Icon icon={levelInfo.icon} className={levelInfo.color} />
+                          </div>
+                          <p className="text-xs text-white/60 mb-1">治理等级 S{user.team_level || 0}</p>
+                          <p className="text-xs text-white/60">治理业绩 ${formatWei(user.team_performance || "0", 0)}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-
-              {/* Member List Grid */}
-              {hierarchyLoading ? (
-                <div className="text-center text-white/40 py-12">
-                  {t('team.loadingTeamMembers')}
-                </div>
-              ) : directUsers.length === 0 ? (
-                <div className="text-center text-white/40 py-12">
-                  {isConnected
-                    ? t('team.noDirectReferrals')
-                    : t('team.connectWalletToView')}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {directUsers.map((user, index) => {
-                    const levelInfo = getLevelIcon(user.team_level || 0);
-                    return (
-                      <div
-                        key={user.address || index}
-                        className="glass-panel member-card rounded-xl p-5 border border-white/5 transition-all"
-                      >
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            <div className="flex flex-col">
-                              <p className="font-bold text-white text-base">
-                                {formatAddress(user.address)}
-                              </p>
-                            </div>
-                          </div>
-                          <span
-                            className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest border ${
-                              user.is_valid_user
-                                ? "bg-[#0bda6f]/20 text-[#0bda6f] border-[#0bda6f]/30"
-                                : "bg-red-500/20 text-red-500 border-red-500/30"
-                            }`}
-                          >
-                            {user.is_valid_user ? t('team.active') : t('team.inactive')}
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 py-4 border-y border-white/5">
-                          <div className="flex flex-col gap-1">
-                            <p className="text-[#a692c9] text-[10px] uppercase font-bold">
-                              {t('team.level')}
-                            </p>
-                            <p className="text-white text-lg font-semibold flex items-center gap-1">
-                              <Icon
-                                icon={levelInfo.icon}
-                                className={`${levelInfo.color} text-base`}
-                              />
-                              {String('S'+user.team_level)}
-                            </p>
-                          </div>
-                          <div className="flex flex-col gap-1">
-                            <p className="text-[#a692c9] text-[10px] uppercase font-bold">
-                              {t('team.performance')}
-                            </p>
-                            <p className="text-white text-lg font-semibold">
-                              ${formatWei(user.personal_performance || "0", 0)}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="mt-4 flex items-center justify-between">
-                          <p className="text-[#a692c9] text-xs">
-                            {t('team.team')}: ${formatWei(user.team_performance || "0", 0)}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Load More Section - only show if there are members */}
-              {directUsers.length > 0 && (
-                <div className="flex justify-center mt-12 mb-20">
-                  <button className="px-8 py-3 rounded-xl border border-primary/40 text-primary font-bold hover:bg-primary/10 transition-all">
-                    {t('team.viewAllMembers')}
-                  </button>
-                </div>
-              )}
             </main>
 
-            {/* Invite Modal */}
-            {showInviteModal && (
+            {/* Proposal Modal */}
+            {showProposalModal && (
               <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
                 <div className="glass-panel rounded-xl p-6 w-full max-w-lg">
                   <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold">{t('team.inviteNewMember')}</h2>
+                    <h2 className="text-2xl font-bold">发布治理提案</h2>
                     <button
-                      onClick={() => setShowInviteModal(false)}
+                      onClick={() => setShowProposalModal(false)}
                       className="text-white/60 hover:text-white transition-colors"
                     >
                       <Icon icon="mdi:close" className="text-xl" />
@@ -620,57 +592,51 @@ function TeamView() {
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-[#a692c9] text-lg mb-2">
-                        {t('team.yourInvitationLink')}
-                      </p>
-                      <div className=" gap-3">
-                        <div className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm font-mono">
-                          {inviteLink}
-                        </div>
-                        <button
-                          onClick={copyInviteLink}
-                          className="px-4 py-3 mt-4 w-full bg-primary hover:bg-primary/90 rounded-lg text-white font-bold transition-colors flex items-center justify-center gap-2"
-                        >
-                          <Icon icon="mdi:content-copy" />
-                          {t('team.copy')}
-                        </button>
-                      </div>
+                      <p className="text-[#a692c9] text-sm mb-2">提案标题</p>
+                      <input
+                        value={proposalForm.title}
+                        onChange={(e) => setProposalForm((prev) => ({ ...prev, title: e.target.value }))}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm outline-none focus:border-primary"
+                        placeholder="例如：调整 GDL 回购销毁比例"
+                      />
                     </div>
 
-                    <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                      <p className="text-[#a692c9] text-lg font-medium mb-2">
-                        How it works:
-                      </p>
-                      <ul className="text-lg space-y-2 text-white/80">
-                        <li className="flex items-start gap-2">
-                          <Icon
-                            icon="mdi:arrow-right"
-                            className="text-primary mt-1 flex-shrink-0"
-                          />
-                          <span>
-                            Share your unique invitation link with friends
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <Icon
-                            icon="mdi:arrow-right"
-                            className="text-primary mt-1 flex-shrink-0"
-                          />
-                          <span>
-                            When someone joins using your link, they become your
-                            direct referral
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <Icon
-                            icon="mdi:arrow-right"
-                            className="text-primary mt-1 flex-shrink-0"
-                          />
-                          <span>
-                            Earn rewards based on your team's performance
-                          </span>
-                        </li>
-                      </ul>
+                    <div>
+                      <p className="text-[#a692c9] text-sm mb-2">提案内容</p>
+                      <textarea
+                        value={proposalForm.description}
+                        onChange={(e) => setProposalForm((prev) => ({ ...prev, description: e.target.value }))}
+                        className="w-full min-h-28 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm outline-none focus:border-primary"
+                        placeholder="描述提案目标、执行方式、预期影响"
+                      />
+                    </div>
+
+                    <div>
+                      <p className="text-[#a692c9] text-sm mb-2">投票周期</p>
+                      <select
+                        value={proposalForm.durationDays}
+                        onChange={(e) => setProposalForm((prev) => ({ ...prev, durationDays: Number(e.target.value) }))}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm outline-none focus:border-primary"
+                      >
+                        <option value={1}>1 天</option>
+                        <option value={3}>3 天</option>
+                        <option value={7}>7 天</option>
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <button
+                        onClick={() => setShowProposalModal(false)}
+                        className="py-3 rounded-lg border border-white/20 text-white/80 hover:bg-white/10"
+                      >
+                        取消
+                      </button>
+                      <button
+                        onClick={handleCreateProposal}
+                        className="py-3 rounded-lg bg-primary text-white font-bold hover:bg-primary/90"
+                      >
+                        发布提案
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -684,8 +650,6 @@ function TeamView() {
       <div className="fixed inset-0 z-0 bg-grid opacity-50 pointer-events-none"></div>
       <div className="fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_50%,rgba(124,59,237,0.1)_0%,transparent_50%)] pointer-events-none"></div>
       
-      {/* Referrer Dialog */}
-      <ReferrerDialog visible={showReferrerDialog} onClose={() => setShowReferrerDialog(false)} autoCloseIfBound={false} />
     </div>
   );
 }

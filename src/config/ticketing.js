@@ -1,9 +1,10 @@
 export const TICKET_OPTIONS = [
-  { name: '开拓者', price: 100, stakeIndex: 0, desc: '适合初次参与' },
-  { name: '缔造者', price: 300, stakeIndex: 1, desc: '适合进阶参与' },
-  { name: '信仰者', price: 500, stakeIndex: 1, desc: '适合深度参与' }
+  { name: '黄金稳健计划', price: 500, stakeIndex: 0, desc: '3个月，年化13%' },
+  { name: '黄金进阶计划', price: 1000, stakeIndex: 1, desc: '6个月，年化19%' },
+  { name: '黄金长期计划', price: 2000, stakeIndex: 2, desc: '12个月，年化30%' }
 ];
 
-export const DAILY_MINT_LIMIT = 3;
-export const DEFAULT_MINT_AMOUNT = 50;
-export const MINT_FUEL_FEE_RLF = 10;
+export const DAILY_MINT_LIMIT = 5;
+export const DEFAULT_MINT_AMOUNT = 500;
+export const MINT_FUEL_FEE_GDL = 0;
+export const MINT_FUEL_FEE_RLF = MINT_FUEL_FEE_GDL;
