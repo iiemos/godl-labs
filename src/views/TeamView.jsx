@@ -15,8 +15,10 @@ import {
 const INITIAL_PROPOSALS = [
   {
     id: "P-240301",
-    title: "启动 GDL/USGD 第二矿池",
-    description: "按照白皮书规划开放第二矿池，权重设为 3，首月限额开启。",
+    titleKey: "teamPage.initialProposal1Title",
+    descriptionKey: "teamPage.initialProposal1Desc",
+    title: "Launch GDL/USGD second pool",
+    description: "Open the second pool with weight 3 according to whitepaper schedule.",
     proposer: "0xA8B4...D901",
     createdAt: "2026-03-01 10:00",
     endsAt: "2026-03-10 10:00",
@@ -25,8 +27,10 @@ const INITIAL_PROPOSALS = [
   },
   {
     id: "P-240227",
-    title: "USGD/GODL 兑换手续费参数",
-    description: "提议将兑换手续费暂定为 0.3%，用于回购并销毁 GDL。",
+    titleKey: "teamPage.initialProposal2Title",
+    descriptionKey: "teamPage.initialProposal2Desc",
+    title: "USGD/GODL swap fee parameter",
+    description: "Set swap fee to 0.3% for GDL buyback and burn.",
     proposer: "0xB172...3F2C",
     createdAt: "2026-02-27 09:30",
     endsAt: "2026-03-05 09:30",
@@ -153,21 +157,21 @@ function TeamView() {
 
   const handleVoteProposal = (proposalId, support) => {
     if (!isConnected || !address) {
-      showNotification("请先连接钱包", "error");
+      showNotification(t('error.connectWallet'), "error");
       return;
     }
     if (!isVerified) {
-      showNotification("请先完成钱包签名验证", "error");
+      showNotification(t('fuelExchange.errorVerifyWallet'), "error");
       return;
     }
     if (voteHistory[proposalId]) {
-      showNotification("你已对该提案投票", "error");
+      showNotification(t('teamPage.errorVoted'), "error");
       return;
     }
 
     const targetProposal = proposals.find((item) => item.id === proposalId);
     if (!targetProposal || getProposalStatus(targetProposal) !== "active") {
-      showNotification("该提案已结束，无法投票", "error");
+      showNotification(t('teamPage.errorProposalClosed'), "error");
       return;
     }
 
@@ -181,22 +185,28 @@ function TeamView() {
       })
     );
     setVoteHistory((prev) => ({ ...prev, [proposalId]: support }));
-    showNotification(`投票成功：${support === "yes" ? "支持" : "反对"} +${votingPower}`, "success");
+    showNotification(
+      t('teamPage.voteSuccess', {
+        action: support === "yes" ? t('teamPage.support') : t('teamPage.oppose'),
+        power: votingPower
+      }),
+      "success"
+    );
   };
 
   const handleCreateProposal = () => {
     if (!isConnected || !address) {
-      showNotification("请先连接钱包", "error");
+      showNotification(t('error.connectWallet'), "error");
       return;
     }
     if (!isVerified) {
-      showNotification("请先完成钱包签名验证", "error");
+      showNotification(t('fuelExchange.errorVerifyWallet'), "error");
       return;
     }
     const title = proposalForm.title.trim();
     const description = proposalForm.description.trim();
     if (!title || !description) {
-      showNotification("请填写完整的提案标题和内容", "error");
+      showNotification(t('teamPage.errorIncompleteProposal'), "error");
       return;
     }
 
@@ -215,42 +225,42 @@ function TeamView() {
     setProposals((prev) => [newProposal, ...prev]);
     setProposalForm({ title: "", description: "", durationDays: 3 });
     setShowProposalModal(false);
-    showNotification("提案已发布，进入投票期", "success");
+    showNotification(t('teamPage.proposalPublished'), "success");
   };
 
   const handleStakeGovernance = (mode) => {
     if (!isConnected || !address) {
-      showNotification("请先连接钱包", "error");
+      showNotification(t('error.connectWallet'), "error");
       return;
     }
     if (!isVerified) {
-      showNotification("请先完成钱包签名验证", "error");
+      showNotification(t('fuelExchange.errorVerifyWallet'), "error");
       return;
     }
     const amount = Number(stakeInput);
     if (!Number.isFinite(amount) || amount <= 0) {
-      showNotification("请输入有效的 GDL 数量", "error");
+      showNotification(t('teamPage.errorInvalidGdl'), "error");
       return;
     }
 
     if (mode === "stake") {
       if (amount > walletGdlBalance) {
-        showNotification("钱包 GDL 余额不足", "error");
+        showNotification(t('teamPage.errorInsufficientWalletGdl'), "error");
         return;
       }
       setWalletGdlBalance((prev) => Number((prev - amount).toFixed(2)));
       setStakedGdl((prev) => Number((prev + amount).toFixed(2)));
-      showNotification(`治理质押成功：${amount} GDL`, "success");
+      showNotification(t('teamPage.successStakeGovernance', { amount }), "success");
       return;
     }
 
     if (amount > stakedGdl) {
-      showNotification("治理质押余额不足", "error");
+      showNotification(t('teamPage.errorInsufficientStakedGdl'), "error");
       return;
     }
     setStakedGdl((prev) => Number((prev - amount).toFixed(2)));
     setWalletGdlBalance((prev) => Number((prev + amount).toFixed(2)));
-    showNotification(`治理赎回成功：${amount} GDL`, "success");
+    showNotification(t('teamPage.successRedeemGovernance', { amount }), "success");
   };
   return (
     <div className=" dark:bg-background-dark font-display text-white min-h-screen">
@@ -281,14 +291,14 @@ function TeamView() {
                   onClick={() => setShowProposalModal(true)}
                 >
                   <Icon icon="mdi:person-add" />
-                  <span>发布提案</span>
+                  <span>{t('teamPage.proposeButton')}</span>
                 </button>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
                 <div className="glass-panel rounded-xl py-3 px-6 lg:p-6  flex flex-col gap-1 lg:gap-2 neon-border-purple border-l-4 border-l-white/20">
                   <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">
-                    治理等级
+                    {t('teamPage.governanceLevel')}
                   </p>
                   <div className="flex items-baseline justify-between">
                     <p className="text-2xl font-bold leading-tight">
@@ -296,14 +306,14 @@ function TeamView() {
                     </p>
                     <p className="text-primary text-lg font-medium flex items-center">
                       <Icon icon="mdi:star" className="text-lg mr-1" />
-                      权重层级
+                      {t('teamPage.weightTier')}
                     </p>
                   </div>
                 </div>
 
                 <div className="glass-panel rounded-xl py-3 px-6 lg:p-6  flex flex-col gap-1 lg:gap-2 neon-border-purple border-l-4 border-l-primary">
                   <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">
-                    治理参与地址
+                    {t('teamPage.governanceAddresses')}
                   </p>
                   <div className="flex items-baseline justify-between">
                     <p className="text-3xl font-bold leading-tight">
@@ -311,36 +321,32 @@ function TeamView() {
                     </p>
                     <p className="text-accent-blue text-lg font-medium flex items-center">
                       <Icon icon="mdi:account-group" className="text-lg mr-1" />
-                      地址
+                      {t('teamPage.address')}
                     </p>
                   </div>
                 </div>
 
                 <div className="glass-panel rounded-xl py-3 px-6 lg:p-6  flex flex-col gap-1 lg:gap-2 neon-border-purple border-l-4 border-l-primary">
                   <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">
-                    进行中提案
+                    {t('teamPage.activeProposals')}
                   </p>
                   <div className="flex items-baseline justify-between">
                     <p className="text-3xl font-bold leading-tight">
                       {activeProposalCount}
                     </p>
-                    <p className="text-[#0bda6f] text-lg font-medium flex items-center">
-                      进行中
-                    </p>
+                    <p className="text-[#0bda6f] text-lg font-medium flex items-center">{t('teamPage.active')}</p>
                   </div>
                 </div>
 
                 <div className="glass-panel rounded-xl py-3 px-6 lg:p-6  flex flex-col gap-1 lg:gap-2 neon-border-purple border-l-4 border-l-primary">
                   <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">
-                    已结束提案
+                    {t('teamPage.closedProposals')}
                   </p>
                   <div className="flex items-baseline justify-between">
                     <p className="text-3xl font-bold leading-tight">
                       {closedProposalCount}
                     </p>
-                    <p className="text-[#0bda6f] text-lg font-medium flex items-center">
-                      已结束
-                    </p>
+                    <p className="text-[#0bda6f] text-lg font-medium flex items-center">{t('teamPage.closed')}</p>
                   </div>
                 </div>
 
@@ -351,7 +357,7 @@ function TeamView() {
 
                 <div className="glass-panel rounded-xl py-2 px-6 lg:p-6 flex flex-col gap-1 lg:gap-2 neon-border-purple border-l-4 border-l-accent-blue">
                   <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">
-                    我的投票记录
+                    {t('teamPage.myVotes')}
                   </p>
                   <div className="flex items-baseline justify-between">
                     <p className="text-3xl font-bold leading-tight text-accent-blue">
@@ -366,14 +372,14 @@ function TeamView() {
 
                 <div className="glass-panel rounded-xl py-2 px-6 lg:p-6 flex flex-col gap-1 lg:gap-2 neon-border-purple border-l-4 border-l-primary">
                   <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">
-                    累计投票量
+                    {t('teamPage.totalVotes')}
                   </p>
                   <div className="flex items-baseline justify-between">
                     <p className="text-2xl font-bold leading-tight truncate">
                       {totalVotes.toFixed(1)}
                     </p>
                     <p className="text-[#0bda6f] text-lg font-medium flex items-center">
-                      支持率 {supportRate}%
+                      {t('teamPage.supportRate')} {supportRate}%
                     </p>
                   </div>
                 </div>
@@ -381,28 +387,28 @@ function TeamView() {
 
                 <div className="glass-panel rounded-xl py-2 px-6 lg:p-6  flex flex-col gap-1 lg:gap-2 neon-border-purple border-l-4 border-l-purple-500">
                   <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">
-                    已质押 GDL
+                    {t('teamPage.stakedGdl')}
                   </p>
                   <div className="flex items-baseline justify-between">
                     <p className="text-3xl font-bold leading-tight text-purple-400">
                       {stakedGdl}
                     </p>
                     <p className="text-purple-400 text-lg font-medium flex items-center">
-                      权重 {votingPower}
+                      {t('teamPage.weight')} {votingPower}
                     </p>
                   </div>
                 </div>
 
                 <div className="glass-panel rounded-xl py-2 px-6 lg:p-6  flex flex-col gap-1 lg:gap-2 neon-border-purple border-l-4 border-l-blue-500">
                   <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">
-                    可用 GDL
+                    {t('teamPage.availableGdl')}
                   </p>
                   <div className="flex items-baseline justify-between">
                     <p className="text-3xl font-bold leading-tight text-blue-400">
                       {walletGdlBalance}
                     </p>
                     <p className="text-blue-400 text-lg font-medium flex items-center">
-                      质押率 {governanceStakeRate}%
+                      {t('teamPage.stakeRate')} {governanceStakeRate}%
                     </p>
                   </div>
                 </div>
@@ -414,13 +420,13 @@ function TeamView() {
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-xl font-bold flex items-center gap-2">
                       <Icon icon="mdi:vote-outline" className="text-primary" />
-                      提案投票列表
+                      {t('teamPage.proposalList')}
                     </h3>
-                    <p className="text-sm text-white/60">我的投票权重：{votingPower}</p>
+                    <p className="text-sm text-white/60">{t('teamPage.myVotingPower', { power: votingPower })}</p>
                   </div>
 
                   {proposals.length === 0 ? (
-                    <div className="text-center text-white/40 py-12">暂无治理提案</div>
+                    <div className="text-center text-white/40 py-12">{t('teamPage.noProposal')}</div>
                   ) : (
                     <div className="space-y-4">
                       {proposals.map((proposal) => {
@@ -432,30 +438,30 @@ function TeamView() {
                           <div key={proposal.id} className="rounded-xl border border-white/10 bg-white/5 p-4">
                             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
                               <div>
-                                <p className="text-white font-bold text-lg">{proposal.title}</p>
-                                <p className="text-white/60 text-sm mt-1">{proposal.description}</p>
+                                <p className="text-white font-bold text-lg">{proposal.titleKey ? t(proposal.titleKey) : proposal.title}</p>
+                                <p className="text-white/60 text-sm mt-1">{proposal.descriptionKey ? t(proposal.descriptionKey) : proposal.description}</p>
                               </div>
                               <span
                                 className={`px-3 py-1 rounded text-xs font-bold w-fit ${
                                   status === "active" ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-300"
                                 }`}
                               >
-                                {status === "active" ? "投票中" : "已结束"}
+                                {status === "active" ? t('teamPage.statusActive') : t('teamPage.statusClosed')}
                               </span>
                             </div>
 
                             <div className="text-xs text-white/60 flex flex-wrap gap-4 mb-3">
-                              <span>提案ID: {proposal.id}</span>
-                              <span>发起人: {proposal.proposer}</span>
-                              <span>截止: {proposal.endsAt}</span>
+                              <span>{t('teamPage.proposalId')}: {proposal.id}</span>
+                              <span>{t('teamPage.proposer')}: {proposal.proposer}</span>
+                              <span>{t('teamPage.deadline')}: {proposal.endsAt}</span>
                             </div>
 
                             <div className="h-2 rounded-full bg-white/10 overflow-hidden mb-2">
                               <div className="h-full bg-green-500" style={{ width: `${yesRate}%` }} />
                             </div>
                             <div className="flex items-center justify-between text-sm mb-4">
-                              <span className="text-green-400">支持: {proposal.yesVotes}</span>
-                              <span className="text-red-400">反对: {proposal.noVotes}</span>
+                              <span className="text-green-400">{t('teamPage.support')}: {proposal.yesVotes}</span>
+                              <span className="text-red-400">{t('teamPage.oppose')}: {proposal.noVotes}</span>
                             </div>
 
                             <div className="flex gap-3">
@@ -468,7 +474,7 @@ function TeamView() {
                                 disabled={status !== "active" || hasVoted}
                                 onClick={() => handleVoteProposal(proposal.id, "yes")}
                               >
-                                支持
+                                {t('teamPage.support')}
                               </button>
                               <button
                                 className={`flex-1 py-2 rounded-lg font-bold ${
@@ -479,7 +485,7 @@ function TeamView() {
                                 disabled={status !== "active" || hasVoted}
                                 onClick={() => handleVoteProposal(proposal.id, "no")}
                               >
-                                反对
+                                {t('teamPage.oppose')}
                               </button>
                             </div>
                           </div>
@@ -492,20 +498,20 @@ function TeamView() {
                 <div className="glass-panel p-6 rounded-xl border border-white/10 h-fit">
                   <h3 className="text-xl font-bold flex items-center gap-2 mb-5">
                     <Icon icon="mdi:database-lock-outline" className="text-primary" />
-                    GDL 治理质押
+                    {t('teamPage.governanceStake')}
                   </h3>
 
                   <div className="space-y-3 mb-4">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">钱包余额</span>
+                      <span className="text-white/60">{t('teamPage.walletBalance')}</span>
                       <span className="font-bold">{walletGdlBalance} GDL</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">已质押</span>
+                      <span className="text-white/60">{t('teamPage.stakedGdl')}</span>
                       <span className="font-bold text-primary">{stakedGdl} GDL</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">当前投票权重</span>
+                      <span className="text-white/60">{t('teamPage.currentWeight')}</span>
                       <span className="font-bold">{votingPower}</span>
                     </div>
                   </div>
@@ -518,26 +524,26 @@ function TeamView() {
                       value={stakeInput}
                       onChange={(e) => setStakeInput(e.target.value)}
                       className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-primary"
-                      placeholder="输入 GDL 数量"
+                      placeholder={t('teamPage.inputGdl')}
                     />
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         className="py-2 rounded-lg font-bold bg-primary/20 text-primary hover:bg-primary/30"
                         onClick={() => handleStakeGovernance("stake")}
                       >
-                        质押
+                        {t('teamPage.stake')}
                       </button>
                       <button
                         className="py-2 rounded-lg font-bold bg-white/10 text-white hover:bg-white/20"
                         onClick={() => handleStakeGovernance("unstake")}
                       >
-                        赎回
+                        {t('teamPage.redeem')}
                       </button>
                     </div>
                   </div>
 
                   <div className="mt-5 rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-                    GDL 治理质押后可参与提案投票，投票权重与质押量相关。提案通过后进入执行阶段。
+                    {t('teamPage.stakeHelp')}
                   </div>
                 </div>
               </div>
@@ -546,16 +552,16 @@ function TeamView() {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-bold flex items-center gap-2">
                     <Icon icon="mdi:account-group-outline" className="text-primary" />
-                    治理参与成员
+                    {t('teamPage.participants')}
                   </h3>
-                  <span className="text-sm text-white/60">{directUsers.length} 个地址</span>
+                  <span className="text-sm text-white/60">{t('teamPage.addressCount', { count: directUsers.length })}</span>
                 </div>
 
                 {hierarchyLoading ? (
                   <div className="text-center text-white/40 py-8">{t('team.loadingTeamMembers')}</div>
                 ) : directUsers.length === 0 ? (
                   <div className="text-center text-white/40 py-8">
-                    {isConnected ? "暂无治理成员数据" : t('team.connectWalletToView')}
+                    {isConnected ? t('teamPage.noMemberData') : t('team.connectWalletToView')}
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -567,8 +573,8 @@ function TeamView() {
                             <p className="font-mono text-sm">{formatAddress(user.address)}</p>
                             <Icon icon={levelInfo.icon} className={levelInfo.color} />
                           </div>
-                          <p className="text-xs text-white/60 mb-1">治理等级 S{user.team_level || 0}</p>
-                          <p className="text-xs text-white/60">治理业绩 ${formatWei(user.team_performance || "0", 0)}</p>
+                          <p className="text-xs text-white/60 mb-1">{t('teamPage.governanceLevelShort', { level: user.team_level || 0 })}</p>
+                          <p className="text-xs text-white/60">{t('teamPage.governancePerformance', { value: formatWei(user.team_performance || "0", 0) })}</p>
                         </div>
                       );
                     })}
@@ -582,7 +588,7 @@ function TeamView() {
               <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
                 <div className="glass-panel rounded-xl p-6 w-full max-w-lg">
                   <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold">发布治理提案</h2>
+                    <h2 className="text-2xl font-bold">{t('teamPage.createProposal')}</h2>
                     <button
                       onClick={() => setShowProposalModal(false)}
                       className="text-white/60 hover:text-white transition-colors"
@@ -592,35 +598,35 @@ function TeamView() {
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-[#a692c9] text-sm mb-2">提案标题</p>
+                      <p className="text-[#a692c9] text-sm mb-2">{t('teamPage.proposalTitle')}</p>
                       <input
                         value={proposalForm.title}
                         onChange={(e) => setProposalForm((prev) => ({ ...prev, title: e.target.value }))}
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm outline-none focus:border-primary"
-                        placeholder="例如：调整 GDL 回购销毁比例"
+                        placeholder={t('teamPage.proposalTitlePlaceholder')}
                       />
                     </div>
 
                     <div>
-                      <p className="text-[#a692c9] text-sm mb-2">提案内容</p>
+                      <p className="text-[#a692c9] text-sm mb-2">{t('teamPage.proposalContent')}</p>
                       <textarea
                         value={proposalForm.description}
                         onChange={(e) => setProposalForm((prev) => ({ ...prev, description: e.target.value }))}
                         className="w-full min-h-28 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm outline-none focus:border-primary"
-                        placeholder="描述提案目标、执行方式、预期影响"
+                        placeholder={t('teamPage.proposalContentPlaceholder')}
                       />
                     </div>
 
                     <div>
-                      <p className="text-[#a692c9] text-sm mb-2">投票周期</p>
+                      <p className="text-[#a692c9] text-sm mb-2">{t('teamPage.votingPeriod')}</p>
                       <select
                         value={proposalForm.durationDays}
                         onChange={(e) => setProposalForm((prev) => ({ ...prev, durationDays: Number(e.target.value) }))}
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm outline-none focus:border-primary"
                       >
-                        <option value={1}>1 天</option>
-                        <option value={3}>3 天</option>
-                        <option value={7}>7 天</option>
+                        <option value={1}>{t('teamPage.day1')}</option>
+                        <option value={3}>{t('teamPage.day3')}</option>
+                        <option value={7}>{t('teamPage.day7')}</option>
                       </select>
                     </div>
 
@@ -629,13 +635,13 @@ function TeamView() {
                         onClick={() => setShowProposalModal(false)}
                         className="py-3 rounded-lg border border-white/20 text-white/80 hover:bg-white/10"
                       >
-                        取消
+                        {t('teamPage.cancel')}
                       </button>
                       <button
                         onClick={handleCreateProposal}
                         className="py-3 rounded-lg bg-primary text-white font-bold hover:bg-primary/90"
                       >
-                        发布提案
+                        {t('teamPage.publish')}
                       </button>
                     </div>
                   </div>

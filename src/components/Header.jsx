@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { Icon } from '@iconify/react';
 import WalletConnect from './WalletConnect.jsx';
-import { useTranslation } from 'react-i18next';
 import i18n from '../i18n/index.js';
 
 function Header({ isOpen, toggleMenu }) {
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
-  const { t } = useTranslation();
+  const currentLanguage = (i18n.resolvedLanguage || i18n.language || 'en').split('-')[0];
 
   const languages = [
     { code: 'en', name: 'English' },
-    { code: 'zh', name: "繁體中文" },
+    { code: 'zh', name: "简体中文" },
     { code: 'ja', name: "日本語" },
     { code: 'ko', name: "한국어" },
     { code: 'pl', name: "Polski" },
@@ -53,7 +52,7 @@ function Header({ isOpen, toggleMenu }) {
                   {languages.map((lang) => (
                     <button
                       key={lang.code}
-                      className={`w-full text-left px-4 py-2 hover:bg-white/10 transition-colors ${i18n.language === lang.code ? 'bg-white/10 font-medium' : ''}`}
+                      className={`w-full text-left px-4 py-2 hover:bg-white/10 transition-colors ${currentLanguage === lang.code ? 'bg-white/10 font-medium' : ''}`}
                       onClick={() => handleLanguageChange(lang.code)}
                     >
                       {lang.name}

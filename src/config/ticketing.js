@@ -1,7 +1,7 @@
 export const TICKET_OPTIONS = [
-  { name: '黄金稳健计划', price: 500, stakeIndex: 0, desc: '3个月，年化13%' },
-  { name: '黄金进阶计划', price: 1000, stakeIndex: 1, desc: '6个月，年化19%' },
-  { name: '黄金长期计划', price: 2000, stakeIndex: 2, desc: '12个月，年化30%' }
+  { name: '黄金稳健计划', nameKey: 'ticketPlan.steady', descKey: 'ticketPlanDesc.steady', price: 500, stakeIndex: 0, desc: '3个月，年化13%' },
+  { name: '黄金进阶计划', nameKey: 'ticketPlan.advanced', descKey: 'ticketPlanDesc.advanced', price: 1000, stakeIndex: 1, desc: '6个月，年化19%' },
+  { name: '黄金长期计划', nameKey: 'ticketPlan.longTerm', descKey: 'ticketPlanDesc.longTerm', price: 2000, stakeIndex: 2, desc: '12个月，年化30%' }
 ];
 
 export const DAILY_MINT_LIMIT = 5;

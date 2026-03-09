@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
+import { useTranslation } from 'react-i18next';
 import {
   fetchUnstakeRecords,
   fetchCommunityReward,
@@ -28,20 +29,20 @@ const MINING_POOLS = [
     name: 'USGD / USDT',
     weight: 1,
     status: 'active',
-    statusText: '已开放',
-    note: '第一矿池',
-    apy: '动态',
-    desc: '当前可参与，按权重参与 GDL 爆块奖励分配。',
+    statusTextKey: 'minePage.statusActive',
+    noteKey: 'minePage.notePool1',
+    apyKey: 'minePage.apyDynamic',
+    descKey: 'minePage.descPool1',
   },
   {
     id: 'pool2',
     name: 'GDL / USGD',
     weight: 3,
     status: 'upcoming',
-    statusText: '延后开放',
-    note: '第二矿池',
-    apy: '待开放',
-    desc: '矿池开放后按权重 3 参与奖励分配。',
+    statusTextKey: 'minePage.statusUpcoming',
+    noteKey: 'minePage.notePool2',
+    apyKey: 'minePage.apyUpcoming',
+    descKey: 'minePage.descPool2',
   },
 ];
 
@@ -52,6 +53,7 @@ function MineView() {
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
   const { addNotification } = useNotification();
+  const { t } = useTranslation();
   const { isVerified: walletVerified } = useWalletVerification();
   const isVerified = USE_STATIC_DATA ? true : walletVerified;
   const CHAIN_ID = parseInt(import.meta.env.VITE_MOVA_CHAIN_ID || '61900', 10);
@@ -231,7 +233,7 @@ function MineView() {
         is_eligible: false,
         pending_reward: '0',
       });
-      addNotification('success', '矿池收益领取成功');
+      addNotification('success', t('minePage.claimPoolSuccess'));
       setCommunityRewardClaiming(false);
       return;
     }
@@ -272,9 +274,9 @@ function MineView() {
         setCommunityReward(res);
       }
 
-      addNotification('success', '矿池收益领取成功');
+      addNotification('success', t('minePage.claimPoolSuccess'));
     } catch (error) {
-      addNotification('error', `领取失败: ${error.message}`);
+      addNotification('error', t('minePage.claimFailed', { message: error.message }));
     } finally {
       setCommunityRewardClaiming(false);
     }
@@ -289,7 +291,7 @@ function MineView() {
         pending_reward: '0',
         is_eligible: false,
       });
-      addNotification('success', '节点奖励领取成功');
+      addNotification('success', t('minePage.claimNodeSuccess'));
       setNodeRewardClaiming(false);
       return;
     }
@@ -319,9 +321,9 @@ function MineView() {
         is_eligible: true,
       });
 
-      addNotification('success', '节点奖励领取成功');
+      addNotification('success', t('minePage.claimNodeSuccess'));
     } catch (error) {
-      addNotification('error', `领取失败: ${error.message}`);
+      addNotification('error', t('minePage.claimFailed', { message: error.message }));
     } finally {
       setNodeRewardClaiming(false);
     }
@@ -361,7 +363,7 @@ function MineView() {
 
   const handleClaimSelectedPool = () => {
     if (selectedPool === 'pool2') {
-      addNotification('info', '第二矿池延后开放，暂不可领取');
+      addNotification('info', t('minePage.delayedOpenNotice'));
       return;
     }
     claimCommunityReward();
@@ -376,36 +378,36 @@ function MineView() {
               <section className="glass-panel rounded-xl p-6 flex flex-col gap-3 neon-border-purple border-l-4 border-l-white/20">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                   <div>
-                    <h1 className="text-3xl font-bold tracking-tight">农场/流动池</h1>
-                    <p className="text-white/60 mt-2">矿池选择、权重分配、GDL 爆块产出与收益领取</p>
+                    <h1 className="text-3xl font-bold tracking-tight">{t('landing.nav.mine')}</h1>
+                    <p className="text-white/60 mt-2">{t('mine.subtitle')}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-white/50">当前地址</p>
-                    <p className="font-mono text-sm">{isConnected ? formatAddress(address) : '未连接钱包'}</p>
+                    <p className="text-sm text-white/50">{t('minePage.headerAddress')}</p>
+                    <p className="font-mono text-sm">{isConnected ? formatAddress(address) : t('mine.notConnected')}</p>
                   </div>
                 </div>
               </section>
 
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="glass-panel rounded-xl py-3 px-6 lg:p-6 flex flex-col gap-1 lg:gap-2 border-l-4 border-l-primary">
-                  <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">总产出</p>
+                  <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">{t('minePage.emissionTotal')}</p>
                   <p className="text-2xl font-bold">{EMISSION_CONFIG.total.toLocaleString()}</p>
                   <p className="text-[#0bda6f] text-sm">GDL</p>
                 </div>
                 <div className="glass-panel rounded-xl py-3 px-6 lg:p-6 flex flex-col gap-1 lg:gap-2 border-l-4 border-l-accent-blue">
-                  <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">首日产出</p>
+                  <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">{t('minePage.emissionFirstDay')}</p>
                   <p className="text-2xl font-bold">{EMISSION_CONFIG.firstDay.toLocaleString()}</p>
-                  <p className="text-[#0bda6f] text-sm">GDL / 日</p>
+                  <p className="text-[#0bda6f] text-sm">GDL / {t('minePage.dayUnit')}</p>
                 </div>
                 <div className="glass-panel rounded-xl py-3 px-6 lg:p-6 flex flex-col gap-1 lg:gap-2 border-l-4 border-l-purple-500">
-                  <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">日递减</p>
+                  <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">{t('minePage.emissionDailyDecrease')}</p>
                   <p className="text-2xl font-bold">{EMISSION_CONFIG.dailyDecrease}</p>
-                  <p className="text-[#0bda6f] text-sm">GDL / 日</p>
+                  <p className="text-[#0bda6f] text-sm">GDL / {t('minePage.dayUnit')}</p>
                 </div>
                 <div className="glass-panel rounded-xl py-3 px-6 lg:p-6 flex flex-col gap-1 lg:gap-2 border-l-4 border-l-blue-500">
-                  <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">产出周期</p>
-                  <p className="text-2xl font-bold">3 年</p>
-                  <p className="text-[#0bda6f] text-sm">{EMISSION_CONFIG.cycleDays} 天</p>
+                  <p className="text-[#a692c9] text-xs font-semibold uppercase tracking-wider">{t('minePage.emissionCycle')}</p>
+                  <p className="text-2xl font-bold">3 {t('minePage.yearUnit')}</p>
+                  <p className="text-[#0bda6f] text-sm">{EMISSION_CONFIG.cycleDays} {t('minePage.dayUnit')}</p>
                 </div>
               </div>
 
@@ -414,9 +416,9 @@ function MineView() {
                   <div className="flex items-center justify-between mb-5">
                     <h3 className="text-xl font-bold flex items-center gap-2">
                       <Icon icon="mdi:database-outline" className="text-primary" />
-                      矿池选择
+                      {t('minePage.poolSelection')}
                     </h3>
-                    <p className="text-sm text-white/60">按权重分配 GDL 爆块奖励</p>
+                    <p className="text-sm text-white/60">{t('minePage.weightRewardHint')}</p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -438,14 +440,14 @@ function MineView() {
                               pool.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-300'
                             }`}
                           >
-                            {pool.statusText}
+                            {t(pool.statusTextKey)}
                           </span>
                         </div>
                         <div className="space-y-1 text-sm text-white/70">
-                          <p>{pool.note}</p>
-                          <p>权重: {pool.weight}</p>
-                          <p>APY: {pool.apy}</p>
-                          <p>{pool.desc}</p>
+                          <p>{t(pool.noteKey)}</p>
+                          <p>{t('minePage.weightLabel')}: {pool.weight}</p>
+                          <p>APY: {t(pool.apyKey)}</p>
+                          <p>{t(pool.descKey)}</p>
                         </div>
                       </button>
                     ))}
@@ -453,30 +455,30 @@ function MineView() {
 
                   <div className="mt-5 rounded-xl border border-white/10 bg-white/5 p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <p className="font-bold">当前矿池: {selectedPoolData.name}</p>
-                      <p className="text-sm text-white/60">权重 {selectedPoolData.weight}</p>
+                      <p className="font-bold">{t('minePage.currentPool')}: {selectedPoolData.name}</p>
+                      <p className="text-sm text-white/60">{t('minePage.weightLabel')} {selectedPoolData.weight}</p>
                     </div>
-                    <p className="text-sm text-white/70">白皮书规则：第一矿池权重 1，第二矿池（延后开放）权重 3。</p>
+                    <p className="text-sm text-white/70">{t('minePage.whitepaperRule')}</p>
                   </div>
                 </section>
 
                 <aside className="glass-panel p-6 rounded-xl border border-white/10 h-fit">
                   <h3 className="text-xl font-bold flex items-center gap-2 mb-5">
                     <Icon icon="mdi:cash-check" className="text-primary" />
-                    收益领取
+                    {t('minePage.rewardClaim')}
                   </h3>
 
                   <div className="space-y-3 mb-4">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">当前矿池待领取</span>
+                      <span className="text-white/60">{t('minePage.selectedPending')}</span>
                       <span className="font-bold">{rewardLoading ? '...' : formatWei(selectedPoolPendingWei, 4)} GDL</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">总待领取</span>
+                      <span className="text-white/60">{t('minePage.totalPending')}</span>
                       <span className="font-bold text-primary">{(rewardLoading || nodeRewardLoading) ? '...' : formatWei(totalPendingWei, 4)} GDL</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">累计已领取</span>
+                      <span className="text-white/60">{t('minePage.totalClaimed')}</span>
                       <span className="font-bold">{summaryLoading ? '...' : formatWei(getAllReward(), 4)} USGD</span>
                     </div>
                   </div>
@@ -491,7 +493,7 @@ function MineView() {
                       onClick={handleClaimSelectedPool}
                       disabled={selectedPool !== 'pool1' || !communityReward?.is_eligible || communityRewardClaiming}
                     >
-                      {communityRewardClaiming ? '领取中...' : '领取当前矿池收益'}
+                      {communityRewardClaiming ? t('minePage.claiming') : t('minePage.claimSelectedPool')}
                     </button>
 
                     <button
@@ -503,7 +505,7 @@ function MineView() {
                       onClick={claimNodeReward}
                       disabled={!isNode || !nodeReward?.is_eligible || nodeRewardClaiming}
                     >
-                      {nodeRewardClaiming ? '领取中...' : '领取节点附加奖励'}
+                      {nodeRewardClaiming ? t('minePage.claiming') : t('minePage.claimNodeReward')}
                     </button>
                   </div>
                 </aside>
@@ -513,24 +515,24 @@ function MineView() {
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-bold text-lg flex items-center gap-2">
                     <Icon icon="mdi:history" className="text-primary" />
-                    收益领取记录
+                    {t('minePage.claimHistory')}
                   </h3>
-                  <span className="text-white/40 text-sm">{unstakeRecords.length} 条</span>
+                  <span className="text-white/40 text-sm">{unstakeRecords.length} {t('minePage.recordsUnit')}</span>
                 </div>
 
                 {recordsLoading ? (
-                  <div className="text-center text-white/40 py-8">加载中...</div>
+                  <div className="text-center text-white/40 py-8">{t('common.loading')}</div>
                 ) : unstakeRecords.length === 0 ? (
-                  <div className="text-center text-white/40 py-8">暂无领取记录</div>
+                  <div className="text-center text-white/40 py-8">{t('minePage.noRecords')}</div>
                 ) : (
                   <div className="space-y-3">
                     {unstakeRecords.slice(0, 8).map((record, index) => (
                       <div key={record.id || index} className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                         <div>
-                          <p className="font-medium">收益: ${formatWei(record.reward, 4)} USGD</p>
+                          <p className="font-medium">{t('minePage.rewardLabel')}: ${formatWei(record.reward, 4)} USGD</p>
                           <p className="text-xs text-white/40 mt-1">{formatTimestamp(record.unstake_time)}</p>
                         </div>
-                        <span className="px-2 py-1 rounded text-xs font-bold bg-green-500/20 text-green-400">已完成</span>
+                        <span className="px-2 py-1 rounded text-xs font-bold bg-green-500/20 text-green-400">{t('minePage.completed')}</span>
                       </div>
                     ))}
                   </div>

@@ -732,7 +732,7 @@ function SwapView() {
                         activeTab === 'stable' ? 'bg-primary text-white' : 'text-[#a692c8] hover:text-white'
                       }`}
                     >
-                      稳定币兑换
+                      {t('swapPage.stableSwapTab')}
                     </button>
                     <button
                       type="button"
@@ -741,7 +741,7 @@ function SwapView() {
                         activeTab === 'godl' ? 'bg-primary text-white' : 'text-[#a692c8] hover:text-white'
                       }`}
                     >
-                      USGD / GODL兑换
+                      {t('swapPage.fuelSwapTab')}
                     </button>
                   </div>
                 </div>

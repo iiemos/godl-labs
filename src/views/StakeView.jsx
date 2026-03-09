@@ -93,6 +93,9 @@ function StakeView() {
     return Number.isInteger(value) ? String(value) : value.toFixed(2);
   };
   const selectedTicket = ticketOptions[selectedTicketIndex] || ticketOptions[0];
+  const getTicketName = (ticket) => t(ticket?.nameKey || '', { defaultValue: ticket?.name || '' });
+  const getTicketDesc = (ticket) => t(ticket?.descKey || '', { defaultValue: ticket?.desc || '' });
+  const selectedTicketName = getTicketName(selectedTicket);
 
   const handleTicketSelect = (index) => {
     const ticket = ticketOptions[index];
@@ -254,7 +257,7 @@ function StakeView() {
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <Icon icon="mdi:clock-outline" className="text-primary" />
-                认购计划选择
+                {t('stakePage.planSelection')}
               </h3>
               <button className="text-primary hover:text-primary/80 transition-colors">
                 <Icon icon="mdi:information-outline" className="text-2xl" />
@@ -274,20 +277,20 @@ function StakeView() {
                 >
                   <div className="flex items-center justify-between gap-3 mb-4">
                     <div className="min-w-0">
-                      <h4 className="text-2xl font-black mb-2">{ticket.name}</h4>
-                      <p className="text-[#a692c8] text-sm">{ticket.desc}</p>
+                      <h4 className="text-2xl font-black mb-2">{getTicketName(ticket)}</h4>
+                      <p className="text-[#a692c8] text-sm">{getTicketDesc(ticket)}</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-[#a692c8] text-lg font-bold hidden md:block">认购单价</p>
+                      <p className="text-[#a692c8] text-lg font-bold hidden md:block">{t('stakePage.unitPrice')}</p>
                       <p className="text-3xl font-black text-[#0bda6f] tabular-nums">{ticket.price} USGD</p>
                     </div>
                   </div>
                   
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
-                      <span className="text-[#a692c8]">认购周期</span>
+                      <span className="text-[#a692c8]">{t('stakePage.cycle')}</span>
                       <span className="text-white font-bold">
-                        {(lockOptions.find((item) => item.index === ticket.stakeIndex)?.months || 0)}个月
+                        {(lockOptions.find((item) => item.index === ticket.stakeIndex)?.months || 0)} {t('stakePage.monthUnit')}
                       </span>
                     </div>
                   </div>
@@ -307,22 +310,22 @@ function StakeView() {
               <div className="space-y-6">
                 <div>
                   <label className="text-[#a692c8] text-[10px] lg:text-lg font-bold uppercase mb-2 block">
-                    认购金额
+                    {t('stakePage.amountLabel')}
                   </label>
                   <div className={`w-full bg-[#110d1a] border rounded-xl py-4 lg:py-5 px-4 ${stakeAmountError ? 'border-red-500' : 'border-[#312447]'}`}>
                     <div className="flex items-center justify-between gap-4">
                       <div>
-                        <p className="text-[#a692c8] text-xs">已选计划</p>
-                        <p className="text-white font-bold text-lg">{selectedTicket.name}</p>
+                        <p className="text-[#a692c8] text-xs">{t('stakePage.selectedPlan')}</p>
+                        <p className="text-white font-bold text-lg">{selectedTicketName}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[#a692c8] text-xs">单份金额</p>
+                        <p className="text-[#a692c8] text-xs">{t('stakePage.singleUnitAmount')}</p>
                         <p className="text-primary font-black text-2xl">{selectedTicket.price} USGD</p>
                       </div>
                     </div>
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-3">
-                    <p className="text-[#a692c8] text-sm">认购份数</p>
+                    <p className="text-[#a692c8] text-sm">{t('stakePage.quantity')}</p>
                     <div className="flex items-center bg-[#110d1a] border border-[#312447] rounded-lg overflow-hidden">
                       <button
                         type="button"
@@ -357,12 +360,12 @@ function StakeView() {
                     <span className="text-[#a692c8] uppercase">{t('stake.stakeAmount')}</span>
                     <span className="text-primary">{stakeAmount}</span>
                   </div>
-                  <p className="text-[#a692c8] text-sm">认购总额将按计划单价与份数自动计算。</p>
+                  <p className="text-[#a692c8] text-sm">{t('stakePage.totalHint')}</p>
                 </div>
                 
                 <div className="p-4 bg-background-dark/50 rounded-xl border border-[#312447] text-md">
                   <div className="flex justify-between mb-2">
-                    <span className="text-[#a692c8]">认购手续费</span>
+                    <span className="text-[#a692c8]">{t('stakePage.fee')}</span>
                     <span className="text-white font-bold">
                       {formatAmount(subscriptionFee)} USGD ({(subscriptionFeeRate * 100).toFixed(2)}%)
                     </span>
@@ -374,22 +377,22 @@ function StakeView() {
                     </span>
                   </div>
                   <div className="flex justify-between mb-2">
-                    <span className="text-[#a692c8]">预计利息</span>
+                    <span className="text-[#a692c8]">{t('stakePage.estimatedInterest')}</span>
                     <span className="text-[#0bda6f] font-bold">
                       {formatAmount(expectedInterest)} USGD
                     </span>
                   </div>
                   <div className="flex justify-between mb-2">
-                    <span className="text-[#a692c8]">预计 GDL 激励</span>
-                    <span className="text-white font-bold">{formatAmount(gdlBonusEstimate)} GDL 等值</span>
+                    <span className="text-[#a692c8]">{t('stakePage.gdlBonus')}</span>
+                    <span className="text-white font-bold">{formatAmount(gdlBonusEstimate)} {t('stakePage.gdlEquivalent')}</span>
                   </div>
                   <div className="flex justify-between mb-2">
-                    <span className="text-[#a692c8]">每3秒释放</span>
+                    <span className="text-[#a692c8]">{t('stakePage.releasePer3s')}</span>
                     <span className="text-white font-bold">{per3sInterest.toFixed(6)} USGD + {per3sGdlEquivalent.toFixed(6)} GDL</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#a692c8]">{t('stake.lockupPeriod')}</span>
-                    <span className="text-white font-bold">{selectedLockOption.months} 个月 ({selectedLockOption.rate}% APY)</span>
+                    <span className="text-white font-bold">{selectedLockOption.months} {t('stakePage.monthUnit')} ({selectedLockOption.rate}% APY)</span>
                   </div>
                 </div>
                 

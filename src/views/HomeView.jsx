@@ -23,47 +23,71 @@ function HomeView() {
   const isVerified = USE_STATIC_DATA ? true : walletVerified
 
   const homeCopy = {
-    heroTitle: 'GODL LABS',
-    heroSubtitle: '由稳定币 USGD、黄金锚定币 GODL 与治理代币 GDL 组成的 RWA 资产平台。',
-    networkHint: 'USGD / GODL / GDL 多资产协同网络',
-    globalStatsTitle: '全网认购规模',
-    userCountTitle: '用户数',
-    tvlTitle: '总锁仓量 TVL',
-    dailyStakeTitle: '当日认购额',
-    performanceTitle: '个人累计认购',
-    assetsTitle: '核心资产模型',
-    assetsSubtitle: '基金以坦桑尼亚核心矿产资产基地为底层，依托经 Geological and Mineral Resource Consulting Services 勘探鉴证、坦桑尼亚矿业委员会（TMC）备案确认的 100 万盎司（约 31.1035 吨）黄金储备，并完成数字化确权与链上存证，对应 10 亿美金授权开采量。',
-    viewModules: '查看认购模块',
-    moduleOneTag: 'USGD',
-    moduleOneTitle: '稳定币层',
-    moduleOneDesc: 'USGD 与 USDT 在流动性池保持 1:1，作为平台认购与结算基础资产。',
-    moduleOneMetricA: '锚定关系',
-    moduleOneMetricAValue: 'USGD = USDT',
-    moduleOneMetricB: '应用场景',
-    moduleOneMetricBValue: '入金与基金认购',
-    moduleTwoTag: 'GODL',
-    moduleTwoTitle: '黄金锚定层',
-    moduleTwoDesc: 'GODL 映射黄金基金份额价值，基金收益主要来自合法合规矿权区域的金矿开采，为生态提供长期、稳定的实体收益来源。',
-    moduleTwoMetricA: '初始发行',
-    moduleTwoMetricAValue: '160,000 GODL',
-    moduleTwoMetricB: '锚定价值',
-    moduleTwoMetricBValue: '5 亿美金黄金基金',
-    ctaTitle: '进入认购',
-    ctaSubtitle: '支持 3 / 6 / 12 个月认购周期，收益线性释放，附加 GDL 激励。',
-    ctaButton: '立即认购',
-    footerBrand: 'Godl.io',
-    footerDesc: '以链上透明机制连接稳定资产、黄金锚定资产与治理价值。',
-    protocolTitle: '协议模块',
-    protocolItem1: 'USDT ↔ USGD 兑换',
-    protocolItem2: 'USGD ↔ GODL 兑换',
-    protocolItem3: '认购',
-    protocolItem4: 'GDL 农场/流动池',
-    companyTitle: '联系方式',
-    companyItem1: 'X',
-    companyItem2: 'Telegram',
-    companyItem3: 'Medium',
-    newsletterTitle: '项目更新',
-    newsletterDesc: '订阅 Godl.io 动态，获取认购、挖矿与治理进展。',
+    heroTitle: t('landing.heroTitle'),
+    heroTagline: t('landing.heroTagline'),
+    heroSubtitle: t('landing.heroSubtitle'),
+    networkHint: t('landing.networkHint'),
+    globalStatsTitle: t('landing.globalStatsTitle'),
+    userCountTitle: t('landing.userCountTitle'),
+    userCountValue: t('landing.userCountValue'),
+    tvlTitle: t('landing.tvlTitle'),
+    dailyStakeTitle: t('landing.dailyStakeTitle'),
+    performanceTitle: t('landing.performanceTitle'),
+    snapshotLabel: t('landing.snapshotLabel'),
+    personalOnly: t('landing.personalOnly'),
+    assetsTitle: t('landing.assetsTitle'),
+    assetsSubtitle: t('landing.assetsSubtitle'),
+    viewModules: t('landing.viewModules'),
+    moduleOneTag: t('landing.moduleOneTag'),
+    moduleOneTitle: t('landing.moduleOneTitle'),
+    moduleOneDesc: t('landing.moduleOneDesc'),
+    moduleOneMetricA: t('landing.moduleOneMetricA'),
+    moduleOneMetricAValue: t('landing.moduleOneMetricAValue'),
+    moduleOneMetricB: t('landing.moduleOneMetricB'),
+    moduleOneMetricBValue: t('landing.moduleOneMetricBValue'),
+    moduleTwoTag: t('landing.moduleTwoTag'),
+    moduleTwoTitle: t('landing.moduleTwoTitle'),
+    moduleTwoDesc: t('landing.moduleTwoDesc'),
+    moduleTwoMetricA: t('landing.moduleTwoMetricA'),
+    moduleTwoMetricAValue: t('landing.moduleTwoMetricAValue'),
+    moduleTwoMetricB: t('landing.moduleTwoMetricB'),
+    moduleTwoMetricBValue: t('landing.moduleTwoMetricBValue'),
+    ctaTitle: t('landing.ctaTitle'),
+    ctaSubtitle: t('landing.ctaSubtitle'),
+    ctaButton: t('landing.ctaButton'),
+    footerBrand: t('landing.footerBrand'),
+    footerDesc: t('landing.footerDesc'),
+    protocolTitle: t('landing.protocolTitle'),
+    protocolItem1: t('landing.protocolItem1'),
+    protocolItem2: t('landing.protocolItem2'),
+    protocolItem3: t('landing.protocolItem3'),
+    protocolItem4: t('landing.protocolItem4'),
+    companyTitle: t('landing.contactTitle'),
+    companyItem1: t('landing.contactItem1'),
+    companyItem2: t('landing.contactItem2'),
+    companyItem3: t('landing.contactItem3'),
+    newsletterTitle: t('landing.newsletterTitle'),
+    newsletterDesc: t('landing.newsletterDesc'),
+    teamTitle: t('landing.teamTitle'),
+    teamSubtitle: t('landing.teamSubtitle'),
+    teamMember1Name: t('landing.teamMember1Name'),
+    teamMember1Role: t('landing.teamMember1Role'),
+    teamMember1Bio: t('landing.teamMember1Bio'),
+    teamMember2Name: t('landing.teamMember2Name'),
+    teamMember2Role: t('landing.teamMember2Role'),
+    teamMember2Bio: t('landing.teamMember2Bio'),
+    teamMember3Name: t('landing.teamMember3Name'),
+    teamMember3Role: t('landing.teamMember3Role'),
+    teamMember3Bio: t('landing.teamMember3Bio'),
+    partnersTitle: t('landing.partnersTitle'),
+    navHome: t('landing.nav.home'),
+    navSwap: t('landing.nav.swap'),
+    navStake: t('landing.nav.stake'),
+    navMine: t('landing.nav.mine'),
+    navGovernanceData: t('landing.nav.governanceData'),
+    navWhitepaper: t('landing.nav.whitepaper'),
+    enterStake: t('landing.enterStake'),
+    viewWhitepaper: t('landing.viewWhitepaper'),
   }
 
   const partnerLogos = [
@@ -105,11 +129,12 @@ function HomeView() {
   // Language menu toggle
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false)
   const languageMenuRef = useRef(null)
+  const currentLanguage = (i18n.resolvedLanguage || i18n.language || 'en').split('-')[0]
   
   // Languages - Only show English and Chinese
   const languages = [
     { code: 'en', name: 'English' },
-    { code: 'zh-hant', name: "繁體中文" },
+    { code: 'zh', name: "简体中文" },
     { code: 'ja', name: "日本語" },
     { code: 'ko', name: "한국어" },
     { code: 'pl', name: "Polski" },
@@ -274,12 +299,12 @@ function HomeView() {
           
           {/* Desktop navigation */}
           <nav className="hidden md:flex items-center gap-10">
-            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/">首页</Link>
-            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/swap">Swap</Link>
-            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/stake">认购</Link>
-            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/mine">农场/流动池</Link>
-            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/governance-data">治理数据</Link>
-            <a className="text-sm font-medium hover:text-primary transition-colors" href="/whitepaper/GODLLABS.pdf" target="_blank" rel="noreferrer">白皮书</a>
+            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/">{homeCopy.navHome}</Link>
+            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/swap">{homeCopy.navSwap}</Link>
+            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/stake">{homeCopy.navStake}</Link>
+            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/mine">{homeCopy.navMine}</Link>
+            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/governance-data">{homeCopy.navGovernanceData}</Link>
+            <a className="text-sm font-medium hover:text-primary transition-colors" href="/whitepaper/GODLLABS.pdf" target="_blank" rel="noreferrer">{homeCopy.navWhitepaper}</a>
           </nav>
           
           {/* Wallet connect */}
@@ -298,7 +323,7 @@ function HomeView() {
                     {languages.map((lang) => (
                       <button
                         key={lang.code}
-                        className={`w-full text-left px-4 py-2 hover:bg-white/10 transition-colors ${i18n.language === lang.code ? 'bg-white/10 font-medium' : ''}`}
+                        className={`w-full text-left px-4 py-2 hover:bg-white/10 transition-colors ${currentLanguage === lang.code ? 'bg-white/10 font-medium' : ''}`}
                         onClick={() => handleLanguageChange(lang.code)}
                       >
                         {lang.name}
@@ -317,23 +342,23 @@ function HomeView() {
             <nav className="max-w-7xl mx-auto px-6 py-4 flex flex-col gap-2">
               <Link className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-2xl font-medium hover:text-primary" to="/" onClick={() => setIsMobileMenuOpen(false)}>
                 <Icon icon="mdi:home-lightning-bolt" />
-                <p className="text-xl font-medium">首页</p>
+                <p className="text-xl font-medium">{homeCopy.navHome}</p>
               </Link>
               <Link className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-2xl font-medium hover:text-primary" to="/swap" onClick={() => setIsMobileMenuOpen(false)}>
                 <Icon icon="mdi:account-balance-wallet" />
-                <p className="text-xl font-medium">Swap</p>
+                <p className="text-xl font-medium">{homeCopy.navSwap}</p>
               </Link>
               <Link className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-2xl font-medium hover:text-primary" to="/stake" onClick={() => setIsMobileMenuOpen(false)}>
                 <Icon icon="mdi:gavel" />
-                <p className="text-xl font-medium">认购</p>
+                <p className="text-xl font-medium">{homeCopy.navStake}</p>
               </Link>
               <Link className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-2xl font-medium hover:text-primary" to="/mine" onClick={() => setIsMobileMenuOpen(false)}>
                 <Icon icon="mdi:chart-donut" />
-                <p className="text-xl font-medium">农场/流动池</p>
+                <p className="text-xl font-medium">{homeCopy.navMine}</p>
               </Link>
               <Link className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-2xl font-medium hover:text-primary" to="/governance-data" onClick={() => setIsMobileMenuOpen(false)}>
                 <Icon icon="mdi:database" />
-                <p className="text-xl font-medium">治理数据</p>
+                <p className="text-xl font-medium">{homeCopy.navGovernanceData}</p>
               </Link>
               <a
                 className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-2xl font-medium hover:text-primary"
@@ -343,7 +368,7 @@ function HomeView() {
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <Icon icon="mdi:file-download" />
-                <p className="text-xl font-medium">白皮书</p>
+                <p className="text-xl font-medium">{homeCopy.navWhitepaper}</p>
               </a>
             </nav>
           </div>
@@ -356,13 +381,14 @@ function HomeView() {
           <div className="max-w-5xl w-full flex flex-col items-center text-center z-10">
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60">
               {homeCopy.heroTitle}
+              <span className="ml-4 inline-block bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent-blue to-primary">{homeCopy.heroTagline}</span>
             </h1>
             <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mb-10 font-normal leading-relaxed">
               {homeCopy.heroSubtitle}
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-4 mb-16">
               <Link className="w-full sm:w-auto px-20 py-4 rounded-xl bg-primary text-white font-bold text-lg shadow-xl shadow-primary/40 hover:translate-y-[-4px] transition-all" to="/stake">
-                进入认购
+                {homeCopy.enterStake}
               </Link>
               <a
                 className="w-full sm:w-auto px-20 py-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 font-bold text-lg transition-all backdrop-blur-sm"
@@ -370,7 +396,7 @@ function HomeView() {
                 target="_blank"
                 rel="noreferrer"
               >
-                查看白皮书
+                {homeCopy.viewWhitepaper}
               </a>
             </div>
             {/* Hero Animation */}
@@ -416,7 +442,7 @@ function HomeView() {
                 <Icon icon="mdi:account-group" className="text-primary text-3xl" />
                 <span className="font-bold">{homeCopy.userCountTitle}</span>
               </div>
-              <span className="text-sm text-white/70">880K</span>
+              <span className="text-sm text-white/70">{homeCopy.userCountValue}</span>
             </div>
           </div>
         </section>
@@ -446,7 +472,7 @@ function HomeView() {
                 {dateStats.loading ? '...' : `$${formatWei(dateStats.total_stake, 0)}`}
               </p>
               <div className="flex items-center gap-2 text-slate-500 text-sm">
-                当日认购快照 ({selectedDate})
+                {homeCopy.snapshotLabel} ({selectedDate})
                 {/* <div className="flex items-center gap-4">
                   <input
                     type="date"
@@ -467,7 +493,7 @@ function HomeView() {
                 {!isConnected ? 'N/A' : userLoading ? '...' : `$${formatWei(userInfo?.personal_performance || '0', 0)}`}
               </p>
               <div className="flex items-center gap-2 text-slate-500 text-sm">
-                {isConnected ? '仅展示个人数据' : t('common.connectWalletToView')}
+                {isConnected ? homeCopy.personalOnly : t('common.connectWalletToView')}
               </div>
             </div>
           </div>
@@ -557,8 +583,8 @@ function HomeView() {
 
         <section className="py-24 px-6 max-w-7xl mx-auto" id="team">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">The Architects of Yield</h2>
-            <p className="text-slate-400 max-w-2xl mx-auto leading-relaxed text-lg">A team of seasoned veterans bridging the gap between traditional finance and the decentralized future.</p>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">{homeCopy.teamTitle}</h2>
+            <p className="text-slate-400 max-w-2xl mx-auto leading-relaxed text-lg">{homeCopy.teamSubtitle}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="glow-card p-8 rounded-2xl flex flex-col items-center text-center group animate-breathing">
@@ -570,9 +596,9 @@ function HomeView() {
                   <Icon icon="material-symbols:verified-rounded" className="text-white text-xs" />
                 </div>
               </div>
-              <h3 className="text-2xl font-bold mb-1">Ethan Caldwell</h3>
-              <p className="text-primary font-bold text-sm uppercase tracking-widest mb-4">Founder &amp; CEO</p>
-              <p className="text-slate-400 text-sm leading-relaxed">10+ years of experience in precious metals supply chain and asset management. Managed a $50M+ portfolio in traditional finance markets. Early Bitcoin adopter since 2015; RWA strategic visionary.</p>
+              <h3 className="text-2xl font-bold mb-1">{homeCopy.teamMember1Name}</h3>
+              <p className="text-primary font-bold text-sm uppercase tracking-widest mb-4">{homeCopy.teamMember1Role}</p>
+              <p className="text-slate-400 text-sm leading-relaxed">{homeCopy.teamMember1Bio}</p>
             </div>
             <div className="glow-card p-8 rounded-2xl flex flex-col items-center text-center group animate-breathing" style={{ animationDelay: '0.5s' }}>
               <div className="size-32 rounded-full mb-6 p-1 bg-gradient-to-tr from-accent-blue to-primary relative">
@@ -583,9 +609,9 @@ function HomeView() {
                   <Icon icon="material-symbols:code-rounded" className="text-white text-xs" />
                 </div>
               </div>
-              <h3 className="text-2xl font-bold mb-1">Viktor Kova</h3>
-              <p className="text-accent-blue font-bold text-sm uppercase tracking-widest mb-4">CTO / Lead Architect</p>
-              <p className="text-slate-400 text-sm leading-relaxed">Full-stack Web3 developer specializing in Solidity and Rust. Former Senior Engineer at Top Tech Co/Protocol. Led the development of secure smart contracts with zero security incidents.</p>
+              <h3 className="text-2xl font-bold mb-1">{homeCopy.teamMember2Name}</h3>
+              <p className="text-accent-blue font-bold text-sm uppercase tracking-widest mb-4">{homeCopy.teamMember2Role}</p>
+              <p className="text-slate-400 text-sm leading-relaxed">{homeCopy.teamMember2Bio}</p>
             </div>
             <div className="glow-card p-8 rounded-2xl flex flex-col items-center text-center group animate-breathing" style={{ animationDelay: '1s' }}>
               <div className="size-32 rounded-full mb-6 p-1 bg-gradient-to-tr from-purple-500 to-accent-blue relative">
@@ -596,9 +622,9 @@ function HomeView() {
                   <Icon icon="material-symbols:trending-up-rounded" className="text-white text-xs" />
                 </div>
               </div>
-              <h3 className="text-2xl font-bold mb-1">lNeoJ</h3>
-              <p className="text-purple-400 font-bold text-sm uppercase tracking-widest mb-4">Chief Growth Officer (CGO)</p>
-              <p className="text-slate-400 text-sm leading-relaxed">Serial entrepreneur in the crypto space with a focus on community building. Proven track record of scaling Web3 communities to 50k+ active members. Expert in DeFi user acquisition.</p>
+              <h3 className="text-2xl font-bold mb-1">{homeCopy.teamMember3Name}</h3>
+              <p className="text-purple-400 font-bold text-sm uppercase tracking-widest mb-4">{homeCopy.teamMember3Role}</p>
+              <p className="text-slate-400 text-sm leading-relaxed">{homeCopy.teamMember3Bio}</p>
             </div>
           </div>
         </section>
@@ -606,7 +632,7 @@ function HomeView() {
         <section className="pb-20 px-6">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold">合作伙伴</h2>
+              <h2 className="text-3xl font-bold">{homeCopy.partnersTitle}</h2>
             </div>
             <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {partnerLogos.map((partner) => (

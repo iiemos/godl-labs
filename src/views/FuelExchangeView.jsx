@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { useAccount } from 'wagmi';
+import { useTranslation } from 'react-i18next';
 import useStakeStore from '../stores/stakeStore';
 import { useNotification, useWalletVerification } from '../App.jsx';
 import { MOCK_ADDRESS, USE_STATIC_DATA } from '../config/mock.js';
@@ -12,6 +13,7 @@ function FuelExchangeView({ embedded = false }) {
   const { isVerified: walletVerified } = useWalletVerification();
   const isVerified = USE_STATIC_DATA ? true : walletVerified;
   const { addNotification } = useNotification();
+  const { t } = useTranslation();
   const { usdtBalance, loadStakeData } = useStakeStore();
 
   const [mode, setMode] = useState('buy');
@@ -57,25 +59,30 @@ function FuelExchangeView({ embedded = false }) {
 
   const handleExchange = () => {
     if (!isConnected || !address) {
-      addNotification('error', '请先连接钱包');
+      addNotification('error', t('fuelExchange.errorConnectWallet'));
       return;
     }
     if (!isVerified) {
-      addNotification('error', '请先完成钱包签名验证');
+      addNotification('error', t('fuelExchange.errorVerifyWallet'));
       return;
     }
     if (normalizedAmount <= 0) {
-      addNotification('error', '请输入有效兑换数量');
+      addNotification('error', t('fuelExchange.errorInvalidAmount'));
       return;
     }
     if (normalizedAmount > fromBalance) {
-      addNotification('error', `${fromToken} 余额不足`);
+      addNotification('error', t('error.insufficientBalance'));
       return;
     }
 
     addNotification(
       'success',
-      `兑换已提交：${normalizedAmount.toFixed(isBuy ? 2 : 6)} ${fromToken} -> ${estimatedValue} ${toToken}`
+      t('fuelPage.submitSuccess', {
+        amount: normalizedAmount.toFixed(isBuy ? 2 : 6),
+        fromToken,
+        estimatedValue,
+        toToken
+      })
     );
   };
 
@@ -86,8 +93,8 @@ function FuelExchangeView({ embedded = false }) {
       }`}
     >
       <div className="mb-8 text-center">
-        <h3 className="text-4xl font-bold tracking-tight mb-2">USGD / GODL 兑换</h3>
-        <p className="text-white/50 text-sm">基于 PAXG 流动性价格折算的黄金锚定兑换窗口</p>
+        <h3 className="text-4xl font-bold tracking-tight mb-2">{t('fuelPage.title')}</h3>
+        <p className="text-white/50 text-sm">{t('fuelPage.subtitle')}</p>
       </div>
 
       <div className="glass-card w-full max-w-[480px] p-6 rounded-3xl relative overflow-hidden">
@@ -117,8 +124,8 @@ function FuelExchangeView({ embedded = false }) {
 
         <div className="bg-background-dark/60 border border-white/5 p-5 rounded-2xl mb-2 hover:border-primary/40 transition-all">
           <div className="flex justify-between items-center mb-3">
-            <span className="text-white/50 text-lg font-medium uppercase tracking-wider">从</span>
-            <span className="text-white/50 text-lg">余额: <span className="text-white/80">{fromBalance.toFixed(3)} {fromToken}</span></span>
+            <span className="text-white/50 text-lg font-medium uppercase tracking-wider">{t('fuelPage.from')}</span>
+            <span className="text-white/50 text-lg">{t('swap.balance')} <span className="text-white/80">{fromBalance.toFixed(3)} {fromToken}</span></span>
           </div>
           <div className="flex items-center gap-4">
             <input
@@ -153,8 +160,8 @@ function FuelExchangeView({ embedded = false }) {
 
         <div className="bg-background-dark/60 border border-white/5 p-5 rounded-2xl mt-2 hover:border-primary/40 transition-all">
           <div className="flex justify-between items-center mb-3">
-            <span className="text-white/50 text-lg font-medium uppercase tracking-wider">到</span>
-            <span className="text-white/50 text-lg">余额: <span className="text-white/80">{toBalance.toFixed(3)} {toToken}</span></span>
+            <span className="text-white/50 text-lg font-medium uppercase tracking-wider">{t('fuelPage.to')}</span>
+            <span className="text-white/50 text-lg">{t('swap.balance')} <span className="text-white/80">{toBalance.toFixed(3)} {toToken}</span></span>
           </div>
           <div className="flex items-center gap-4">
             <input
@@ -171,16 +178,16 @@ function FuelExchangeView({ embedded = false }) {
 
         <div className="mt-6 space-y-3 px-2">
           <div className="flex justify-between text-lg">
-            <span className="text-white/40">兑换汇率</span>
+            <span className="text-white/40">{t('fuelExchange.exchangeRate')}</span>
             <span className="text-white/70">{exchangeRateText}</span>
           </div>
           <div className="flex justify-between text-lg">
-            <span className="text-white/40">价格参考</span>
+            <span className="text-white/40">{t('fuelPage.priceReference')}</span>
             <span className="text-white/70">1 GODL = {godlPriceInUsgd} USGD</span>
           </div>
           <div className="flex justify-between text-lg">
-            <span className="text-white/40">兑换手续费</span>
-            <span className="text-white/70">暂定</span>
+            <span className="text-white/40">{t('fuelExchange.processingFee')}</span>
+            <span className="text-white/70">{t('fuelPage.feePending')}</span>
           </div>
         </div>
 
@@ -189,12 +196,12 @@ function FuelExchangeView({ embedded = false }) {
           onClick={handleExchange}
         >
           <Icon icon="mdi:check-circle" />
-          <span>{isBuy ? '兑换 GODL' : '兑换 USGD'}</span>
+          <span>{isBuy ? t('fuelPage.swapToGodl') : t('fuelPage.swapToUsgd')}</span>
         </button>
 
         <div className="mt-4 flex items-start gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-3">
           <Icon icon="mdi:clock-outline" className="text-primary mt-0.5" />
-          <p className="text-sm text-[#d4c5f5]">GODL 折算价格来源于 PAXG 流动性池，页面数据为前端估算值。</p>
+          <p className="text-sm text-[#d4c5f5]">{t('fuelPage.disclaimer')}</p>
         </div>
       </div>
     </div>

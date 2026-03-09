@@ -1,9 +1,11 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Icon } from '@iconify/react'
+import { useTranslation } from 'react-i18next'
 
 function Sidebar({ isOpen, onClose }) {
   const location = useLocation()
+  const { t } = useTranslation()
   
   // 在首页不显示侧边栏
   if (location.pathname === '/') {
@@ -22,7 +24,7 @@ function Sidebar({ isOpen, onClose }) {
             onClick={onClose}
           >
             <Icon icon="mdi:home-lightning-bolt" className='text-2xl' />
-            <p className="text-xl font-bold">首页</p>
+            <p className="text-xl font-bold">{t('landing.nav.home')}</p>
           </Link>
           <Link
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer ${
@@ -32,7 +34,7 @@ function Sidebar({ isOpen, onClose }) {
             onClick={onClose}
           >
             <Icon icon="mdi:account-balance-wallet" className='text-2xl' />
-            <p className="text-xl font-medium">Swap</p>
+            <p className="text-xl font-medium">{t('landing.nav.swap')}</p>
           </Link>
           <Link
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer ${
@@ -42,7 +44,7 @@ function Sidebar({ isOpen, onClose }) {
             onClick={onClose}
           >
             <Icon icon="mdi:gavel" className='text-2xl' />
-            <p className="text-xl font-medium">认购</p>
+            <p className="text-xl font-medium">{t('landing.nav.stake')}</p>
           </Link>
           <Link
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer ${
@@ -52,7 +54,7 @@ function Sidebar({ isOpen, onClose }) {
             onClick={onClose}
           >
             <Icon icon="mdi:chart-donut" className='text-2xl' />
-            <p className="text-xl font-medium">农场/流动池</p>
+            <p className="text-xl font-medium">{t('landing.nav.mine')}</p>
           </Link>
           <Link
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer ${
@@ -62,7 +64,7 @@ function Sidebar({ isOpen, onClose }) {
             onClick={onClose}
           >
             <Icon icon="mdi:anvil" className='text-2xl' />
-            <p className="text-xl font-medium">治理中心</p>
+            <p className="text-xl font-medium">{t('landing.nav.governanceCenter')}</p>
           </Link>
           <Link
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer ${
@@ -72,7 +74,7 @@ function Sidebar({ isOpen, onClose }) {
             onClick={onClose}
           >
             <Icon icon="mdi:database" className='text-2xl' />
-            <p className="text-xl font-medium">治理数据</p>
+            <p className="text-xl font-medium">{t('landing.nav.governanceData')}</p>
           </Link>
           <a
             className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-[#a692c8] hover:text-white"
@@ -82,7 +84,7 @@ function Sidebar({ isOpen, onClose }) {
             onClick={onClose}
           >
             <Icon icon="mdi:file-download" className='text-2xl' />
-            <p className="text-xl font-medium">白皮书</p>
+            <p className="text-xl font-medium">{t('landing.nav.whitepaper')}</p>
           </a>
         </nav>
       </div>
