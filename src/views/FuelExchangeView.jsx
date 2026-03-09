@@ -102,7 +102,7 @@ function FuelExchangeView({ embedded = false }) {
               isBuy ? 'bg-primary text-white' : 'text-[#a692c8] hover:text-white'
             }`}
           >
-            USGD -> GODL
+            USGD -&gt; GODL
           </button>
           <button
             type="button"
@@ -111,7 +111,7 @@ function FuelExchangeView({ embedded = false }) {
               !isBuy ? 'bg-primary text-white' : 'text-[#a692c8] hover:text-white'
             }`}
           >
-            GODL -> USGD
+            GODL -&gt; USGD
           </button>
         </div>
 
