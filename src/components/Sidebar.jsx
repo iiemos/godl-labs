@@ -66,14 +66,24 @@ function Sidebar({ isOpen, onClose }) {
           </Link>
           <Link
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer ${
-              location.pathname === '/team' ? 'bg-primary/20 text-primary border border-primary/30' : 'text-[#a692c8] hover:text-white'
+              location.pathname === '/governance-data' ? 'bg-primary/20 text-primary border border-primary/30' : 'text-[#a692c8] hover:text-white'
             }`}
-            to="/team"
+            to="/governance-data"
             onClick={onClose}
           >
             <Icon icon="mdi:database" className='text-2xl' />
             <p className="text-xl font-medium">治理数据</p>
           </Link>
+          <a
+            className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-[#a692c8] hover:text-white"
+            href="/whitepaper/GODLLABS.pdf"
+            target="_blank"
+            rel="noreferrer"
+            onClick={onClose}
+          >
+            <Icon icon="mdi:file-download" className='text-2xl' />
+            <p className="text-xl font-medium">白皮书</p>
+          </a>
         </nav>
       </div>
     </aside>

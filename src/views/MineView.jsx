@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
 import {
-  fetchUserInfo,
   fetchUnstakeRecords,
   fetchCommunityReward,
   fetchRewardSummary,
@@ -17,7 +16,7 @@ import { useNotification, useWalletVerification } from '../App.jsx';
 import { MOCK_ADDRESS, USE_STATIC_DATA } from '../config/mock.js';
 
 const EMISSION_CONFIG = {
-  total: 240000000,
+  total: 270000000,
   firstDay: 465575,
   dailyDecrease: 400,
   cycleDays: 1095,
@@ -64,9 +63,6 @@ function MineView() {
 
   const [selectedPool, setSelectedPool] = useState('pool1');
 
-  const [userInfo, setUserInfo] = useState(null);
-  const [userLoading, setUserLoading] = useState(false);
-
   const [unstakeRecords, setUnstakeRecords] = useState([]);
   const [recordsLoading, setRecordsLoading] = useState(false);
 
@@ -81,31 +77,6 @@ function MineView() {
 
   const [rewardSummary, setRewardSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-    async function loadUserInfo() {
-      if (!isConnected || !address || !isVerified) {
-        setUserInfo(null);
-        return;
-      }
-      setUserLoading(true);
-      try {
-        const res = await fetchUserInfo(address);
-        if (mounted && res && res.success) {
-          setUserInfo(res);
-        }
-      } catch {
-        // ignore
-      } finally {
-        if (mounted) setUserLoading(false);
-      }
-    }
-    loadUserInfo();
-    return () => {
-      mounted = false;
-    };
-  }, [address, isConnected, isVerified]);
 
   useEffect(() => {
     let mounted = true;
@@ -411,7 +382,6 @@ function MineView() {
                   <div className="text-right">
                     <p className="text-sm text-white/50">当前地址</p>
                     <p className="font-mono text-sm">{isConnected ? formatAddress(address) : '未连接钱包'}</p>
-                    <p className="text-sm text-primary mt-1">{userLoading ? '...' : `S${userInfo?.team_level ?? 0}`}</p>
                   </div>
                 </div>
               </section>

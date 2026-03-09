@@ -35,7 +35,7 @@ function Header({ isOpen, toggleMenu }) {
           <div className="flex items-center gap-2">
             {/* <img src="/img/coin.png" alt="GODL LABS Logo" className="size-12" /> */}
             <h2 className="text-xl font-extrabold tracking-tight text-white">
-              GODL <span className="text-[#7c3bed]">LABS</span>
+              Godl<span className="text-primary">.io</span>
             </h2>
           </div>
         <div className="flex items-center gap-6">

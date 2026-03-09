@@ -5,7 +5,7 @@ import { useAccount } from 'wagmi'
 import WalletConnect from '../components/WalletConnect.jsx';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n/index.js';
-import { useNotification, useWalletVerification } from '../App.jsx';
+import { useWalletVerification } from '../App.jsx';
 import { MOCK_ADDRESS, USE_STATIC_DATA } from '../config/mock.js';
 import { 
   fetchGlobalStakeStats, 
@@ -21,19 +21,18 @@ function HomeView() {
   const { t } = useTranslation()
   const { isVerified: walletVerified } = useWalletVerification()
   const isVerified = USE_STATIC_DATA ? true : walletVerified
-  const { addNotification } = useNotification()
 
   const homeCopy = {
     heroTitle: 'GODL LABS',
     heroSubtitle: '由稳定币 USGD、黄金锚定币 GODL 与治理代币 GDL 组成的 RWA 资产平台。',
     networkHint: 'USGD / GODL / GDL 多资产协同网络',
     globalStatsTitle: '全网认购规模',
-    userStatusTitle: '会员状态',
+    userCountTitle: '用户数',
     tvlTitle: '总锁仓量 TVL',
     dailyStakeTitle: '当日认购额',
     performanceTitle: '个人累计认购',
     assetsTitle: '核心资产模型',
-    assetsSubtitle: '围绕 1:1 稳定兑换、黄金锚定兑换与治理激励构建长期价值闭环。',
+    assetsSubtitle: '基金以坦桑尼亚核心矿产资产基地为底层，依托经 Geological and Mineral Resource Consulting Services 勘探鉴证、坦桑尼亚矿业委员会（TMC）备案确认的 100 万盎司（约 31.1035 吨）黄金储备，并完成数字化确权与链上存证，对应 10 亿美金授权开采量。',
     viewModules: '查看认购模块',
     moduleOneTag: 'USGD',
     moduleOneTitle: '稳定币层',
@@ -44,7 +43,7 @@ function HomeView() {
     moduleOneMetricBValue: '入金与基金认购',
     moduleTwoTag: 'GODL',
     moduleTwoTitle: '黄金锚定层',
-    moduleTwoDesc: 'GODL 通过 PAXG 流动性价格折算，映射黄金基金份额价值。',
+    moduleTwoDesc: 'GODL 映射黄金基金份额价值，基金收益主要来自合法合规矿权区域的金矿开采，为生态提供长期、稳定的实体收益来源。',
     moduleTwoMetricA: '初始发行',
     moduleTwoMetricAValue: '160,000 GODL',
     moduleTwoMetricB: '锚定价值',
@@ -52,29 +51,20 @@ function HomeView() {
     ctaTitle: '进入认购',
     ctaSubtitle: '支持 3 / 6 / 12 个月认购周期，收益线性释放，附加 GDL 激励。',
     ctaButton: '立即认购',
-    footerBrand: 'GODL LABS',
+    footerBrand: 'Godl.io',
     footerDesc: '以链上透明机制连接稳定资产、黄金锚定资产与治理价值。',
     protocolTitle: '协议模块',
     protocolItem1: 'USDT ↔ USGD 兑换',
     protocolItem2: 'USGD ↔ GODL 兑换',
     protocolItem3: '认购',
     protocolItem4: 'GDL 农场/流动池',
-    companyTitle: '产品路径',
-    companyItem1: '阶段一：稳定币与黄金兑换',
-    companyItem2: '阶段二：基金认购与分红',
-    companyItem3: '阶段三：双矿池挖矿',
-    companyItem4: '阶段四：治理提案与投票',
+    companyTitle: '联系方式',
+    companyItem1: 'X',
+    companyItem2: 'Telegram',
+    companyItem3: 'Medium',
     newsletterTitle: '项目更新',
-    newsletterDesc: '订阅 GODL LABS 动态，获取认购、挖矿与治理进展。',
+    newsletterDesc: '订阅 Godl.io 动态，获取认购、挖矿与治理进展。',
   }
-
-  const marvinInviteLink = 'https://godllabs.io/invite/ABCD1234'
-  const marvinFeatureRows = [
-    { cmd: 'USGD', desc: '与 USDT 维持 1:1 稳定兑换' },
-    { cmd: 'GODL', desc: '通过 PAXG 价格锚定黄金价值' },
-    { cmd: '认购释放', desc: '利息每 3 秒等比例线性释放' },
-    { cmd: 'GDL 激励', desc: '按 0.8x / 1.2x / 1.6x 提供激励' },
-  ]
 
   const partnerLogos = [
     { name: 'Vanuatu', icon: 'flagpack:vu' },
@@ -141,19 +131,6 @@ function HomeView() {
     loadDateStakeStats(newDate)
   }
 
-  const handleCopyMarvinInviteLink = async () => {
-    try {
-      if (!navigator?.clipboard?.writeText) {
-        addNotification('error', '当前环境不支持自动复制')
-        return
-      }
-      await navigator.clipboard.writeText(marvinInviteLink)
-      addNotification('success', '邀请链接已复制')
-    } catch {
-      addNotification('error', '复制失败，请手动复制')
-    }
-  }
-  
   // Load date stake stats
   const loadDateStakeStats = async (date) => {
     if (!date || !isVerified) return
@@ -289,7 +266,7 @@ function HomeView() {
           <div className="flex items-center gap-2">
             {/* <img src="/img/coin.png" alt="GODL LABS Logo" className="size-12" /> */}
             <h2 className="text-xl font-extrabold tracking-tight text-white">
-              GODL <span className="text-[#a855f7]">LABS</span>
+              Godl.<span className="text-primary">io</span>
             </h2>
           </div>
           
@@ -301,7 +278,8 @@ function HomeView() {
             <Link className="text-sm font-medium hover:text-primary transition-colors" to="/swap">Swap</Link>
             <Link className="text-sm font-medium hover:text-primary transition-colors" to="/stake">认购</Link>
             <Link className="text-sm font-medium hover:text-primary transition-colors" to="/mine">农场/流动池</Link>
-            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/team">治理数据</Link>
+            <Link className="text-sm font-medium hover:text-primary transition-colors" to="/governance-data">治理数据</Link>
+            <a className="text-sm font-medium hover:text-primary transition-colors" href="/whitepaper/GODLLABS.pdf" target="_blank" rel="noreferrer">白皮书</a>
           </nav>
           
           {/* Wallet connect */}
@@ -353,10 +331,20 @@ function HomeView() {
                 <Icon icon="mdi:chart-donut" />
                 <p className="text-xl font-medium">农场/流动池</p>
               </Link>
-              <Link className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-2xl font-medium hover:text-primary" to="/team" onClick={() => setIsMobileMenuOpen(false)}>
+              <Link className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-2xl font-medium hover:text-primary" to="/governance-data" onClick={() => setIsMobileMenuOpen(false)}>
                 <Icon icon="mdi:database" />
                 <p className="text-xl font-medium">治理数据</p>
               </Link>
+              <a
+                className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-2xl font-medium hover:text-primary"
+                href="/whitepaper/GODLLABS.pdf"
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Icon icon="mdi:file-download" />
+                <p className="text-xl font-medium">白皮书</p>
+              </a>
             </nav>
           </div>
         )}
@@ -376,6 +364,14 @@ function HomeView() {
               <Link className="w-full sm:w-auto px-20 py-4 rounded-xl bg-primary text-white font-bold text-lg shadow-xl shadow-primary/40 hover:translate-y-[-4px] transition-all" to="/stake">
                 进入认购
               </Link>
+              <a
+                className="w-full sm:w-auto px-20 py-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 font-bold text-lg transition-all backdrop-blur-sm"
+                href="/whitepaper/GODLLABS.pdf"
+                target="_blank"
+                rel="noreferrer"
+              >
+                查看白皮书
+              </a>
             </div>
             {/* Hero Animation */}
             <div className="relative w-full max-w-3xl aspect-[16/9] rounded-3xl overflow-hidden border border-white/10 bg-slate-900/40 backdrop-blur-md animate-float">
@@ -386,7 +382,7 @@ function HomeView() {
                   <div className="absolute inset-16 rounded-full border-[3px] border-dashed border-primary/10 animate-rotate-slow" style={{ animationDuration: '20s' }}></div>
                   <div className="absolute inset-20 rounded-full bg-gradient-to-br from-primary to-accent-blue opacity-30 blur-3xl animate-breathing"></div>
                   <div className="relative z-10 flex items-center justify-center w-24 h-24 rounded-full bg-slate-900/80 border border-white/10 shadow-2xl">
-                    <img src="/img/coin.png" alt="GODL LABS Logo" />
+                    <img src="/img/coin.png" alt="Godl.io Logo" />
                   </div>
                   <div className="absolute top-0 left-1/2 size-2 bg-primary rounded-full blur-[1px] animate-pulse"></div>
                   <div className="absolute bottom-10 right-10 size-3 bg-accent-blue rounded-full blur-[2px] animate-pulse" style={{ animationDelay: '1s' }}></div>
@@ -417,12 +413,10 @@ function HomeView() {
             </div>
             <div className="glass-panel p-6 rounded-xl border border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Icon icon="mdi:account-circle" className="text-primary text-3xl" />
-                <span className="font-bold">{homeCopy.userStatusTitle}</span>
+                <Icon icon="mdi:account-group" className="text-primary text-3xl" />
+                <span className="font-bold">{homeCopy.userCountTitle}</span>
               </div>
-              <span className="text-sm text-white/70">
-                {isConnected ? (userLoading ? t('common.loading') : `${t('team.level')}: ${userInfo?.team_level_name || 'N/A'}`) : t('common.notConnected')}
-              </span>
+              <span className="text-sm text-white/70">880K</span>
             </div>
           </div>
         </section>
@@ -467,13 +461,13 @@ function HomeView() {
             <div className="glow-card p-8 rounded-xl flex flex-col gap-3 animate-breathing" style={{ animationDelay: '1s' }}>
               <div className="flex items-center justify-between">
                 <p className="text-slate-400 text-sm font-medium uppercase tracking-wider">{homeCopy.performanceTitle}</p>
-                <Icon icon="fluent:people-team-24-filled" className="text-purple-400 text-3xl" />
+                <Icon icon="mdi:chart-line" className="text-purple-400 text-3xl" />
               </div>
               <p className="text-4xl font-bold tracking-tight">
                 {!isConnected ? 'N/A' : userLoading ? '...' : `$${formatWei(userInfo?.personal_performance || '0', 0)}`}
               </p>
               <div className="flex items-center gap-2 text-slate-500 text-sm">
-                {isConnected ? `${t('team.team')}: $${formatWei(userInfo?.team_performance || '0', 0)}` : t('common.connectWalletToView')}
+                {isConnected ? '仅展示个人数据' : t('common.connectWalletToView')}
               </div>
             </div>
           </div>
@@ -543,69 +537,6 @@ function HomeView() {
           </div>
         </section>
 
-        <section className="py-20 px-6 max-w-7xl mx-auto">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 text-primary mb-6">
-              <Icon icon="mdi:sparkles" className="text-lg" />
-              <span className="font-medium">邀请</span>
-              <Icon icon="mdi:sparkles" className="text-lg" />
-            </div>
-            <h2 className="text-4xl sm:text-5xl font-bold text-white mb-4">邀请好友</h2>
-            <p className="text-lg text-slate-400 mb-6">GODL LABS：共建黄金 RWA 价值网络</p>
-            <div className="max-w-3xl mx-auto flex flex-col sm:flex-row gap-4 justify-center">
-              <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 h-12 px-4 flex-1">
-                <span className="flex-1 min-w-0 text-sm text-primary font-mono truncate">{marvinInviteLink}</span>
-              </div>
-              <button
-                type="button"
-                className="h-12 px-5 border border-primary/40 text-primary rounded-lg hover:bg-primary/10 transition-colors flex items-center justify-center gap-2"
-                onClick={handleCopyMarvinInviteLink}
-              >
-                <Icon icon="mdi:content-copy" className="text-sm" />
-                复制
-              </button>
-            </div>
-          </div>
-
-          <div className="relative rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/10 via-background-dark/60 to-accent-blue/10 p-8 md:p-12 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10 blur-3xl pointer-events-none"></div>
-            <div className="relative grid lg:grid-cols-2 gap-10 items-center">
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-3xl font-bold text-white mb-4">GODL LABS：黄金锚定与稳定币协同</h3>
-                  <p className="text-slate-300">
-                    构建“稳定兑换 × 黄金锚定 × 治理激励”链上闭环体系
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  {marvinFeatureRows.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-3 p-4 rounded-lg bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-all"
-                    >
-                      <Icon icon="mdi:check-decagram" className="text-primary" />
-                      <code className="text-primary font-mono font-medium">{item.cmd}</code>
-                      <span className="text-slate-300">- {item.desc}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex justify-center">
-                <div className="relative group">
-                  <div className="w-72 h-72 bg-gradient-to-br from-primary/30 via-primary/20 to-accent-blue/30 rounded-3xl border border-primary/40 flex items-center justify-center backdrop-blur-sm group-hover:scale-105 transition-transform duration-500">
-                    <Icon icon="mdi:hexagon-multiple" className="text-primary text-8xl animate-pulse" />
-                  </div>
-                  <div className="absolute -top-5 -right-5 w-10 h-10 bg-primary rounded-full animate-bounce"></div>
-                  <div className="absolute -bottom-5 -left-5 w-7 h-7 bg-accent-blue rounded-full animate-pulse"></div>
-                  <div className="absolute top-1/2 -left-6 w-5 h-5 bg-primary rounded-full animate-ping"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-        
         {/* CTA Section */}
         <section className="py-20 px-6">
           <div className="max-w-7xl mx-auto rounded-3xl bg-gradient-to-br from-primary to-accent-blue p-1px">
@@ -620,6 +551,54 @@ function HomeView() {
                   {homeCopy.ctaButton}
                 </Link>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-24 px-6 max-w-7xl mx-auto" id="team">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">The Architects of Yield</h2>
+            <p className="text-slate-400 max-w-2xl mx-auto leading-relaxed text-lg">A team of seasoned veterans bridging the gap between traditional finance and the decentralized future.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="glow-card p-8 rounded-2xl flex flex-col items-center text-center group animate-breathing">
+              <div className="size-32 rounded-full mb-6 p-1 bg-gradient-to-tr from-primary to-accent-blue relative">
+                <div className="size-full rounded-full bg-slate-900 flex items-center justify-center overflow-hidden">
+                  <Icon icon="material-symbols:person-rounded" className="text-5xl text-primary/80 group-hover:scale-110 transition-transform duration-500" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 size-8 bg-primary rounded-full flex items-center justify-center border-4 border-background-dark">
+                  <Icon icon="material-symbols:verified-rounded" className="text-white text-xs" />
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold mb-1">Ethan Caldwell</h3>
+              <p className="text-primary font-bold text-sm uppercase tracking-widest mb-4">Founder &amp; CEO</p>
+              <p className="text-slate-400 text-sm leading-relaxed">10+ years of experience in precious metals supply chain and asset management. Managed a $50M+ portfolio in traditional finance markets. Early Bitcoin adopter since 2015; RWA strategic visionary.</p>
+            </div>
+            <div className="glow-card p-8 rounded-2xl flex flex-col items-center text-center group animate-breathing" style={{ animationDelay: '0.5s' }}>
+              <div className="size-32 rounded-full mb-6 p-1 bg-gradient-to-tr from-accent-blue to-primary relative">
+                <div className="size-full rounded-full bg-slate-900 flex items-center justify-center overflow-hidden">
+                  <Icon icon="material-symbols:terminal-rounded" className="text-5xl text-accent-blue/80 group-hover:scale-110 transition-transform duration-500" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 size-8 bg-accent-blue rounded-full flex items-center justify-center border-4 border-background-dark">
+                  <Icon icon="material-symbols:code-rounded" className="text-white text-xs" />
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold mb-1">Viktor Kova</h3>
+              <p className="text-accent-blue font-bold text-sm uppercase tracking-widest mb-4">CTO / Lead Architect</p>
+              <p className="text-slate-400 text-sm leading-relaxed">Full-stack Web3 developer specializing in Solidity and Rust. Former Senior Engineer at Top Tech Co/Protocol. Led the development of secure smart contracts with zero security incidents.</p>
+            </div>
+            <div className="glow-card p-8 rounded-2xl flex flex-col items-center text-center group animate-breathing" style={{ animationDelay: '1s' }}>
+              <div className="size-32 rounded-full mb-6 p-1 bg-gradient-to-tr from-purple-500 to-accent-blue relative">
+                <div className="size-full rounded-full bg-slate-900 flex items-center justify-center overflow-hidden">
+                  <Icon icon="material-symbols:rocket-launch-rounded" className="text-5xl text-purple-400/80 group-hover:scale-110 transition-transform duration-500" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 size-8 bg-purple-500 rounded-full flex items-center justify-center border-4 border-background-dark">
+                  <Icon icon="material-symbols:trending-up-rounded" className="text-white text-xs" />
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold mb-1">lNeoJ</h3>
+              <p className="text-purple-400 font-bold text-sm uppercase tracking-widest mb-4">Chief Growth Officer (CGO)</p>
+              <p className="text-slate-400 text-sm leading-relaxed">Serial entrepreneur in the crypto space with a focus on community building. Proven track record of scaling Web3 communities to 50k+ active members. Expert in DeFi user acquisition.</p>
             </div>
           </div>
         </section>
@@ -659,7 +638,7 @@ function HomeView() {
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center gap-2 mb-6">
               <Icon icon="mdi:deployed-code" className="text-primary" />
-              <span className="text-xl font-bold">{homeCopy.footerBrand}</span>
+              <span className="text-xl font-bold">Godl.<span className="text-primary">io</span></span>
             </div>
             <p className="text-slate-500 text-sm mb-6">{homeCopy.footerDesc}</p>
             <div className="flex items-center gap-4">
@@ -675,21 +654,20 @@ function HomeView() {
             </div>
           </div>
           <div>
+            <h4 className="font-bold mb-6">{homeCopy.companyTitle}</h4>
+            <ul className="space-y-4 text-sm text-slate-500">
+              <li><a className="hover:text-primary transition-colors" href="https://x.com/GODLLABS" target="_blank" rel="noreferrer">{homeCopy.companyItem1}</a></li>
+              <li><a className="hover:text-primary transition-colors" href="https://t.me/GODL_LABS" target="_blank" rel="noreferrer">{homeCopy.companyItem2}</a></li>
+              <li><a className="hover:text-primary transition-colors" href="https://medium.com/@godllabs2026" target="_blank" rel="noreferrer">{homeCopy.companyItem3}</a></li>
+            </ul>
+          </div>
+          <div>
             <h4 className="font-bold mb-6">{homeCopy.protocolTitle}</h4>
             <ul className="space-y-4 text-sm text-slate-500">
               <li><a className="hover:text-primary transition-colors" href="#">{homeCopy.protocolItem1}</a></li>
               <li><a className="hover:text-primary transition-colors" href="#">{homeCopy.protocolItem2}</a></li>
               <li><a className="hover:text-primary transition-colors" href="#">{homeCopy.protocolItem3}</a></li>
               <li><a className="hover:text-primary transition-colors" href="#">{homeCopy.protocolItem4}</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold mb-6">{homeCopy.companyTitle}</h4>
-            <ul className="space-y-4 text-sm text-slate-500">
-              <li><a className="hover:text-primary transition-colors" href="#">{homeCopy.companyItem1}</a></li>
-              <li><a className="hover:text-primary transition-colors" href="#">{homeCopy.companyItem2}</a></li>
-              <li><a className="hover:text-primary transition-colors" href="#">{homeCopy.companyItem3}</a></li>
-              <li><a className="hover:text-primary transition-colors" href="#">{homeCopy.companyItem4}</a></li>
             </ul>
           </div>
           <div>

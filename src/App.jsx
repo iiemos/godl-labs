@@ -15,9 +15,7 @@ import TeamView from './views/TeamView.jsx'
 import MineView from './views/MineView.jsx'
 import './i18n/index.js'
 import { useEffect, useState } from 'react'
-import ReferrerDialog from './components/ReferrerDialog.jsx'
 import Notification from './components/Notification.jsx'
-import { fetchUserInfo } from './api/index.js'
 import { USE_STATIC_DATA, MOCK_ADDRESS } from './config/mock.js'
 
 // Create React Query client
@@ -74,64 +72,6 @@ const config = createConfig({
   },
 })
 
-// Referral binding checker component
-function ReferralBindingChecker({ onBindingStatus }) {
-  const { address: walletAddress, isConnected: walletConnected } = useAccount()
-  const address = USE_STATIC_DATA ? MOCK_ADDRESS : walletAddress
-  const isConnected = USE_STATIC_DATA ? true : walletConnected
-  const { isVerified } = useWalletVerification()
-  const effectiveVerified = USE_STATIC_DATA ? true : isVerified
-  
-  useEffect(() => {
-    if (USE_STATIC_DATA) {
-      onBindingStatus(true)
-      return
-    }
-
-    let mounted = true
-    
-    async function checkBindingStatus() {
-      if (!isConnected || !address || !effectiveVerified) {
-        if (mounted) onBindingStatus(null)
-        return
-      }
-      
-      try {
-        console.log('Checking referral binding for address:', address)
-        
-        // 使用 fetchUserInfo 接口获取用户信息
-        const userInfo = await fetchUserInfo(address)
-        
-        // 检查接口返回值
-        if (!userInfo) {
-          console.error('Failed to get user info')
-          if (mounted) onBindingStatus(false)
-          return
-        }
-        
-        // 根据接口返回值判断是否需要显示邀请弹窗
-        if (userInfo.success === false && userInfo.error === '用户不存在') {
-          console.log('User does not exist, showing referrer dialog')
-          if (mounted) onBindingStatus(false)
-        } else {
-          console.log('User exists, not showing referrer dialog')
-          if (mounted) onBindingStatus(true)
-        }
-      } catch (error) {
-        console.error('Error checking referral binding:', error)
-        // If there's an error, assume user is not bound
-        if (mounted) onBindingStatus(false)
-      }
-    }
-    
-    // Only check if user is connected and has an address
-    checkBindingStatus()
-    return () => { mounted = false }
-  }, [address, isConnected, effectiveVerified, onBindingStatus])
-  
-  return null
-}
-
 function AppContent() {
   const location = useLocation()
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false)
@@ -139,8 +79,6 @@ function AppContent() {
   const address = USE_STATIC_DATA ? MOCK_ADDRESS : walletAddress
   const isConnected = USE_STATIC_DATA ? true : walletConnected
   const [isVerified, setIsVerified] = useState(USE_STATIC_DATA)
-  const [globalReferrerVisible, setGlobalReferrerVisible] = useState(false)
-  const [hasClosedReferrerDialog, setHasClosedReferrerDialog] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [notificationId, setNotificationId] = useState(1)
 
@@ -158,34 +96,8 @@ function AppContent() {
     }
   }, [address, isConnected])
 
-  useEffect(() => {
-    if (!isVerified && !USE_STATIC_DATA) {
-      setGlobalReferrerVisible(false)
-    }
-  }, [isVerified])
-  
   const toggleMenu = () => {
     setIsSidebarOpen(!isSidebarOpen)
-  }
-  
-  // Handle referral binding status
-  const handleBindingStatus = (bound) => {
-    if (USE_STATIC_DATA) return
-    console.log('Handling binding status:', bound)
-    if (bound === false && !hasClosedReferrerDialog) {
-      console.log('User not bound, showing referrer dialog')
-      setGlobalReferrerVisible(true)
-    } else if (bound === true) {
-      console.log('User already bound, hiding referrer dialog')
-      setGlobalReferrerVisible(false)
-    }
-  }
-
-  // Handle referrer dialog close
-  const handleReferrerDialogClose = () => {
-    console.log('Referrer dialog closed, setting hasClosedReferrerDialog to true')
-    setGlobalReferrerVisible(false)
-    setHasClosedReferrerDialog(true)
   }
 
   // Add notification
@@ -207,9 +119,6 @@ function AppContent() {
           {/* 在除了首页之外的页面显示 Header */}
           {location.pathname !== '/' && <Header toggleMenu={toggleMenu} />}
           
-          {/* Referral Binding Checker */}
-          <ReferralBindingChecker onBindingStatus={handleBindingStatus} />
-          
           <div className="flex flex-col lg:flex-row h-screen overflow-hidden">
             {/* Sidebar Navigation */}
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
@@ -222,11 +131,10 @@ function AppContent() {
                 <Route path="/mint" element={<MintView />} />
                 <Route path="/fuel-exchange" element={<Navigate to="/swap?tab=godl" replace />} />
                 <Route path="/swap" element={<SwapView />} />
-                <Route path="/team" element={<TeamView />} />
+                <Route path="/governance-data" element={<TeamView />} />
                 <Route path="/mine" element={<MineView />} />
               </Routes>
             </main>
-            {globalReferrerVisible && <ReferrerDialog visible={true} onClose={handleReferrerDialogClose} />}
           </div>
           
           {/* Global Cookie Consent Banner */}

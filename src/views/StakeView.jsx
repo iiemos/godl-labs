@@ -3,13 +3,10 @@ import { Icon } from '@iconify/react';
 import useStakeStore from '../stores/stakeStore';
 import { useWalletIntegration } from '../hooks/useWalletIntegration';
 import { useTranslation } from 'react-i18next';
-import { fetchGlobalStakeStats, fetchUserInfo, formatWei } from '../api/index.js';
-import ReferrerDialog from '../components/ReferrerDialog.jsx';
-import { createPublicClient, http } from 'viem';
-import TEAMLEVEL_ABI from '../abis/TeamLevel.json';
+import { fetchGlobalStakeStats, formatWei } from '../api/index.js';
 import { useAccount } from 'wagmi';
 import { useNotification, useWalletVerification } from '../App.jsx';
-import { MOCK_ADDRESS, USE_STATIC_DATA } from '../config/mock.js';
+import { USE_STATIC_DATA } from '../config/mock.js';
 import { TICKET_OPTIONS } from '../config/ticketing.js';
 
 function StakeView() {
@@ -17,16 +14,11 @@ function StakeView() {
   useWalletIntegration();
   
   const { t } = useTranslation();
-  const { address: walletAddress, isConnected: walletConnected } = useAccount();
-  const address = USE_STATIC_DATA ? MOCK_ADDRESS : walletAddress;
+  const { isConnected: walletConnected } = useAccount();
   const isConnected = USE_STATIC_DATA ? true : walletConnected;
   const { isVerified: walletVerified } = useWalletVerification();
   const isVerified = USE_STATIC_DATA ? true : walletVerified;
-  
-    // const {  isConnected } = useAccount();
-  // const address = '0x62da8a37619ef2b2aa42fb14b343bab6a759d9b1'
-  const [showReferrerDialog, setShowReferrerDialog] = useState(false);
-  const [checkingReferral, setCheckingReferral] = useState(false);
+
   const { addNotification } = useNotification();
   
   // Global staking stats
@@ -34,10 +26,6 @@ function StakeView() {
     currentStake: '0',
     loading: true
   });
-  
-  // Contract addresses and RPC URL
-  const TEAM_LEVEL_ADDRESS = import.meta.env.VITE_TEAM_LEVEL_ADDRESS || '0x1a5a3A1F23f6314Ffac0705fC19B9c6c9319Ae82';
-  const RPC_URL = import.meta.env.VITE_RPC_URL || 'https://rpc.movachain.com/';
   
   const {
     // State
@@ -199,32 +187,13 @@ function StakeView() {
         return;
       }
       if (validateStakeAmount()) {
-        // 检查用户是否绑定了邀请人
-        if (isConnected && address) {
-          console.log('Checking referral binding status before staking...');
-          const isBound = await checkReferralBinding(address);
-          console.log('isBound',isBound);
-          
-          if (!isBound) {
-          console.log('User has not bound a referrer, showing referrer dialog');
-          setShowReferrerDialog(true);
-          return;
-        }
-          console.log('User has bound a referrer, proceeding with staking');
-        }
-        
         // 执行质押操作
         await onStake();
         addTicketHoldings(selectedTicketIndex, ticketQuantity);
         addNotification('success', t('success.stakeSuccessful'));
       }
     } catch (err) {
-      // 如果是新用户需要绑定邀请人的错误，显示绑定弹窗
-      if (err.message && (err.message.includes('newUserReferral') || err.message.includes('invitation'))) {
-        setShowReferrerDialog(true);
-      } else {
-        addNotification('error', t('common.highTrafficPleaseWait') || 'Staking failed');
-      }
+      addNotification('error', t('common.highTrafficPleaseWait') || 'Staking failed');
     }
   };
 
@@ -237,40 +206,6 @@ function StakeView() {
     }
   };
   
-  // Check if user has bound a referrer
-  const checkReferralBinding = async (address) => {
-    if (USE_STATIC_DATA) return true;
-    try {
-      setCheckingReferral(true);
-      
-      console.log('Checking referral binding for address:', address);
-      
-      // 使用 fetchUserInfo 接口获取用户信息
-      const userInfo = await fetchUserInfo(address);
-      
-      // 检查接口返回值
-      if (!userInfo) {
-        console.error('Failed to get user info');
-        return false;
-      }
-      
-      // 根据接口返回值判断是否需要显示邀请弹窗
-      if (userInfo.success === false && userInfo.error === '用户不存在') {
-        console.log('User does not exist, showing referrer dialog');
-        return false;
-      } else {
-        console.log('User exists, not showing referrer dialog');
-        return true;
-      }
-    } catch (error) {
-      console.error('Error checking referral binding:', error);
-      // If there's an error, assume user is not bound
-      return false;
-    } finally {
-      setCheckingReferral(false);
-    }
-  };
-
   return (
     <div className="dark:bg-background-dark font-display text-white min-h-screen">
 
@@ -667,8 +602,6 @@ function StakeView() {
       <div className="fixed inset-0 z-0 bg-grid opacity-50 pointer-events-none"></div>
       <div className="fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_50%,rgba(124,59,237,0.1)_0%,transparent_50%)] pointer-events-none"></div>
       
-      {/* Referrer Dialog */}
-      <ReferrerDialog visible={showReferrerDialog} onClose={() => setShowReferrerDialog(false)} autoCloseIfBound={false} />
     </div>
   );
 }

@@ -14,8 +14,8 @@ const router = createRouter({
       component: () => import('../views/StakeView.vue')
     },
     {
-      path: '/team',
-      name: 'team',
+      path: '/governance-data',
+      name: 'governance-data',
       component: () => import('../views/TeamView.vue')
     },
     {
