@@ -78,7 +78,7 @@ function Sidebar({ isOpen, onClose }) {
           </Link>
           <a
             className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-[#a692c8] hover:text-white"
-            href="/whitepaper/GODLLABS.pdf"
+            href="/whitepaper/GODLLABS_EN.pdf"
             target="_blank"
             rel="noreferrer"
             onClick={onClose}

@@ -304,7 +304,7 @@ function HomeView() {
             <Link className="text-sm font-medium hover:text-primary transition-colors" to="/stake">{homeCopy.navStake}</Link>
             <Link className="text-sm font-medium hover:text-primary transition-colors" to="/mine">{homeCopy.navMine}</Link>
             <Link className="text-sm font-medium hover:text-primary transition-colors" to="/governance-data">{homeCopy.navGovernanceData}</Link>
-            <a className="text-sm font-medium hover:text-primary transition-colors" href="/whitepaper/GODLLABS.pdf" target="_blank" rel="noreferrer">{homeCopy.navWhitepaper}</a>
+            <a className="text-sm font-medium hover:text-primary transition-colors" href="/whitepaper/GODLLABS_EN.pdf" target="_blank" rel="noreferrer">{homeCopy.navWhitepaper}</a>
           </nav>
           
           {/* Wallet connect */}
@@ -362,7 +362,7 @@ function HomeView() {
               </Link>
               <a
                 className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors cursor-pointer text-2xl font-medium hover:text-primary"
-                href="/whitepaper/GODLLABS.pdf"
+                href="/whitepaper/GODLLABS_EN.pdf"
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -392,7 +392,7 @@ function HomeView() {
               </Link>
               <a
                 className="w-full sm:w-auto px-20 py-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 font-bold text-lg transition-all backdrop-blur-sm"
-                href="/whitepaper/GODLLABS.pdf"
+                href="/whitepaper/GODLLABS_EN.pdf"
                 target="_blank"
                 rel="noreferrer"
               >
