@@ -77,11 +77,12 @@ function HomeView() {
   ]
 
   const partnerLogos = [
-    { name: '瓦鲁阿图', logo: '' },
+    { name: 'Vanuatu', icon: 'circle-flags:vu' },
     { name: '印尼AG集团', logo: '/friends/ag.png' },
     { name: 'BitGo', logo: '/friends/bitgo.png' },
     { name: 'Hex Trust', logo: '/friends/hextrust.svg' },
     { name: '币安', logo: '/friends/binance.png' },
+    { name: 'Coinbase', logo: '/friends/coinbase.png' },
   ]
   
   // Global staking stats
@@ -628,11 +629,11 @@ function HomeView() {
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold">合作伙伴</h2>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {partnerLogos.map((partner) => (
                 <div
                   key={partner.name}
-                  className="glass-panel rounded-2xl border border-white/10 h-28 px-4 flex items-center justify-center"
+                  className="glass-panel rounded-2xl border border-white/10 h-20 md:h-28 px-4 flex items-center justify-center"
                 >
                   {partner.logo ? (
                     <img
@@ -640,6 +641,8 @@ function HomeView() {
                       alt={partner.name}
                       className={`max-w-full object-contain  ${partner.name === '币安' ? 'max-h-30' : 'max-h-20'}`}
                     />
+                  ) : partner.icon ? (
+                    <Icon icon={partner.icon} className="text-4xl" aria-label={partner.name} />
                   ) : (
                     <span className="text-white/85 font-bold text-center leading-tight">{partner.name}</span>
                   )}
