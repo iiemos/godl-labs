@@ -77,7 +77,7 @@ function HomeView() {
   ]
 
   const partnerLogos = [
-    { name: 'Vanuatu', icon: 'circle-flags:vu' },
+    { name: 'Vanuatu', icon: 'flagpack:vu' },
     { name: '印尼AG集团', logo: '/friends/ag.png' },
     { name: 'BitGo', logo: '/friends/bitgo.png' },
     { name: 'Hex Trust', logo: '/friends/hextrust.svg' },
